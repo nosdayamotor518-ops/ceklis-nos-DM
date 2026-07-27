@@ -26,8 +26,38 @@
       "H23 Premises", "H23 Process", "H23 People"
     ];
 
+    // Helper Helper Function Prioritas Badge
+    const isPriorityItem = (badgeString) => {
+      if (!badgeString) return false;
+      const badges = badgeString.split(",").map(b => b.trim());
+      return badges.some(b => ["P", "GP", "SGP"].includes(b));
+    };
+
+    // Helper Component Render Badges
+    const renderBadges = (badgeString, isLarge = false) => {
+      if (!badgeString) return null;
+      const badges = badgeString.split(",").map(b => b.trim());
+      return badges.map((b, i) => {
+        let bg = "bg-slate-100 text-slate-700 border-slate-300";
+        if (b === "P") bg = "bg-red-600 text-white border-red-700 font-black shadow-sm animate-pulse";
+        else if (b === "GP") bg = "bg-purple-600 text-white border-purple-700 font-black shadow-sm";
+        else if (b === "SGP") bg = "bg-indigo-700 text-white border-indigo-900 font-black shadow-sm";
+        else if (b === "Mudah") bg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
+        else if (b === "Murah") bg = "bg-teal-100 text-teal-800 border-teal-300 font-semibold";
+
+        const sizeClass = isLarge ? "text-xs px-2.5 py-1" : "text-[10px] px-2 py-0.5";
+
+        return (
+          <span key={i} className={`${sizeClass} rounded-full border ${bg} inline-flex items-center gap-1 shadow-xs`}>
+            {(b === 'P' || b === 'GP' || b === 'SGP') && <span>⭐</span>}
+            {b}
+          </span>
+        );
+      });
+    };
+
     function App() {
-      // Main App Mode: 'form' or 'dashboard'
+      // Main App Mode
       const [appMode, setAppMode] = React.useState("form");
 
       // Form States
@@ -38,6 +68,7 @@
       const [masterCabang, setMasterCabang] = React.useState([]);
       const [masterChecklist, setMasterChecklist] = React.useState([]);
       const [lockedSections, setLockedSections] = React.useState({});
+      const [branchUsers, setBranchUsers] = React.useState([]);
 
       // Form Identity
       const [selectedCabang, setSelectedCabang] = React.useState("");
@@ -61,7 +92,7 @@
       const [selectedDashCabang, setSelectedDashCabang] = React.useState("ALL");
       const [activeAccordionSec, setActiveAccordionSec] = React.useState(null);
 
-      // Initial Fetch Master Data
+      // Fetch Master Data awal
       React.useEffect(() => {
         fetch(`${API_URL}?action=getInitialData`)
           .then(res => res.json())
@@ -77,6 +108,36 @@
             setLoading(false);
           });
       }, []);
+
+      // Handle Perubahan Pilihan Cabang & Ambil Riwayat User
+      const handleCabangChange = (kodeCabang) => {
+        setSelectedCabang(kodeCabang);
+        setNamaUser("");
+        setJabatan("");
+        setBranchUsers([]);
+
+        if (!kodeCabang) return;
+
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: kodeCabang })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            setLockedSections(res.data || {});
+            
+            // Ekstrak daftar user unik yang sudah ada di cabang ini
+            const userMap = [];
+            Object.values(res.data || {}).forEach(item => {
+              if (item && item.user && !userMap.some(u => u.nama === item.user)) {
+                userMap.push({ nama: item.user, jabatan: item.jabatan || "" });
+              }
+            });
+            setBranchUsers(userMap);
+          }
+        });
+      };
 
       // Fetch Dashboard Data
       const loadDashboard = () => {
@@ -108,19 +169,7 @@
           alert("Silakan isi Cabang, Nama, dan Jabatan terlebih dahulu!");
           return;
         }
-        setLoading(true);
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: selectedCabang })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === "success") {
-            setLockedSections(res.data || {});
-            setStep(2);
-          }
-          setLoading(false);
-        });
+        setStep(2);
       };
 
       // Select Section
@@ -251,25 +300,6 @@
         });
       };
 
-      const renderBadges = (badgeString) => {
-        if (!badgeString) return null;
-        const badges = badgeString.split(",").map(b => b.trim());
-        return badges.map((b, i) => {
-          let bg = "bg-gray-100 text-gray-700 border-gray-300";
-          if (b === "P") bg = "bg-red-100 text-red-700 border-red-300 font-bold";
-          if (b === "GP") bg = "bg-purple-100 text-purple-700 border-purple-300 font-bold";
-          if (b === "SGP") bg = "bg-indigo-100 text-indigo-800 border-indigo-300 font-bold";
-          if (b === "Mudah") bg = "bg-green-100 text-green-700 border-green-300";
-          if (b === "Murah") bg = "bg-emerald-100 text-emerald-700 border-emerald-300";
-
-          return (
-            <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${bg} mr-1 inline-block`}>
-              {b}
-            </span>
-          );
-        });
-      };
-
       if (loading) {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -310,15 +340,15 @@
                   <div className="space-y-4">
                     <div className="border-b pb-2">
                       <h2 className="text-xl font-bold text-slate-800">Identitas Assessor</h2>
-                      <p className="text-xs text-slate-500">Pilih cabang dan nama Anda untuk memulai.</p>
+                      <p className="text-xs text-slate-500">Pilih cabang dan pendaftaran nama petugas.</p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">Pilih Cabang</label>
                       <select 
                         value={selectedCabang} 
-                        onChange={e => setSelectedCabang(e.target.value)}
-                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800"
+                        onChange={e => handleCabangChange(e.target.value)}
+                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800 font-medium"
                       >
                         <option value="">-- Pilih Cabang --</option>
                         {masterCabang.map((c, i) => (
@@ -329,11 +359,38 @@
                       </select>
                     </div>
 
+                    {/* FITUR 3: Dropdown Nama Terdaftar untuk Cabang Tersebut */}
+                    {branchUsers.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl space-y-1">
+                        <label className="block text-xs font-bold text-blue-900">
+                          👤 Pilih Petugas Terdaftar (Melanjutkan Pekerjaan):
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const found = branchUsers.find(u => u.nama === val);
+                              if (found) {
+                                setNamaUser(found.nama);
+                                setJabatan(found.jabatan);
+                              }
+                            }
+                          }}
+                          className="w-full p-2.5 border rounded-lg text-xs bg-white text-slate-800 font-semibold"
+                        >
+                          <option value="">-- Gunakan Nama Terdaftar --</option>
+                          {branchUsers.map((u, i) => (
+                            <option key={i} value={u.nama}>{u.nama} ({u.jabatan || 'No Jabatan'})</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Petugas / User</label>
                       <input 
                         type="text" 
-                        placeholder="Contoh: Anton" 
+                        placeholder="Ketik Nama Lengkap..." 
                         value={namaUser}
                         onChange={e => setNamaUser(e.target.value)}
                         className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800"
@@ -355,7 +412,7 @@
                       onClick={handleBranchSelected}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md mt-4"
                     >
-                      Lanjut Pilih Section
+                      Lanjut Pilih Section →
                     </button>
                   </div>
                 )}
@@ -365,12 +422,12 @@
                     <div className="border-b pb-2 flex justify-between items-center">
                       <div>
                         <span className="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-semibold">
-                          Cabang: {selectedCabang}
+                          Cabang: {selectedCabang} | {namaUser}
                         </span>
                         <h2 className="text-xl font-bold text-slate-800 mt-2">Pilih Section Pekerjaan</h2>
                       </div>
                       <button onClick={() => setStep(1)} className="text-xs text-blue-600 font-semibold underline">
-                        Ganti User
+                        Ganti Identitas
                       </button>
                     </div>
 
@@ -397,7 +454,7 @@
                               <p className="text-xs text-slate-500">
                                 {isCompleted && `✓ Selesai (${lock.user})`}
                                 {isInProgressOther && `⏳ Sedang dikerjakan oleh ${lock.user}`}
-                                {isMyProgress && `🔄 Lanjutkan pekerjaan Anda`}
+                                {isMyProgress && `🔄 Lanjutkan pengerjaan Anda`}
                                 {!lock && `Bisa Dikerjakan`}
                               </p>
                             </div>
@@ -429,32 +486,60 @@
                     {(() => {
                       const item = sectionItems[currentIndex];
                       const needPhoto = item.Need_Photo === true || item.Need_Photo === "TRUE";
+                      const isPrio = isPriorityItem(item.Kelas_Badge);
 
                       return (
                         <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
+                          
+                          {/* FITUR 1: Visual Indicator Kelas_Badge Menonjol */}
+                          <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2 ${
+                            isPrio 
+                              ? "bg-slate-900 text-white border-slate-800 shadow-lg ring-2 ring-red-500/50" 
+                              : "bg-slate-100 text-slate-800 border-slate-200"
+                          }`}>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl">{isPrio ? "🚨" : "📌"}</span>
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider font-extrabold opacity-75">
+                                  SKALA PRIORITAS CEKLIS (KOLOM F)
+                                </p>
+                                <p className="text-xs font-bold">
+                                  {isPrio ? "WAJIB DIDAHULUKAN / PRIORITAS TINGGI" : "PENGISIAN STANDAR"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center flex-wrap gap-1">
+                              {renderBadges(item.Kelas_Badge, true)}
+                            </div>
+                          </div>
+
                           <div>
                             <div className="mb-2">
-                              {renderBadges(item.Kelas_Badge)}
                               {needPhoto && (
-                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-300 font-medium">
-                                  📷 Wajib Foto
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-300 font-bold">
+                                  📷 Wajib Foto Bukti
                                 </span>
                               )}
                             </div>
                             <h3 className="text-lg font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</h3>
                           </div>
 
-                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-bold text-amber-800">Indikator Penilaian</span>
+                          {/* FITUR 2: Format Indikator Kolom T Rapi (Bullet, Numbering, Paragraf) */}
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
+                            <div className="flex justify-between items-center border-b border-amber-200 pb-1">
+                              <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                                📋 Indikator Penilaian (Kolom T)
+                              </span>
                               <button 
                                 onClick={() => setShowIndicatorModal(true)}
-                                className="text-xs bg-amber-200 text-amber-900 font-semibold px-2 py-0.5 rounded"
+                                className="text-[11px] bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold px-2 py-0.5 rounded transition"
                               >
-                                Baca Detail
+                                🔍 Perbesar Tampilan
                               </button>
                             </div>
-                            <p className="text-xs text-slate-600 line-clamp-2">{item.Penjelasan_Indikator}</p>
+                            <div className="text-xs text-slate-700 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto pr-1">
+                              {item.Penjelasan_Indikator}
+                            </div>
                           </div>
 
                           <div className="space-y-2">
@@ -470,7 +555,7 @@
                                   key={i}
                                   onClick={() => setSelectedRating(opt.label)}
                                   className={`p-3 rounded-xl border-2 font-bold text-xs text-center transition ${
-                                    selectedRating === opt.label ? `${opt.color} ring-2 ring-blue-400` : "border-slate-200 bg-white text-slate-700"
+                                    selectedRating === opt.label ? `${opt.color} ring-2 ring-blue-400 shadow-sm` : "border-slate-200 bg-white text-slate-700"
                                   }`}
                                 >
                                   {opt.label}
@@ -487,7 +572,7 @@
                                   <img src={photoBase64} alt="Evidence" className="w-full h-40 object-cover" />
                                   <button 
                                     onClick={() => setPhotoBase64("")}
-                                    className="absolute top-2 right-2 bg-rose-600 text-white text-xs px-2 py-1 rounded-lg"
+                                    className="absolute top-2 right-2 bg-rose-600 text-white text-xs px-2 py-1 rounded-lg shadow"
                                   >
                                     Hapus / Foto Ulang
                                   </button>
@@ -519,16 +604,21 @@
                       );
                     })()}
 
+                    {/* Modal Detail Indikator Penilaian */}
                     {showIndicatorModal && (
-                      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl p-5 max-w-sm w-full space-y-3">
-                          <h4 className="font-bold text-slate-800">Penjelasan Indikator</h4>
-                          <p className="text-sm text-slate-600 leading-relaxed">
+                      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+                        <div className="bg-white rounded-2xl p-5 max-w-lg w-full space-y-4 shadow-2xl border">
+                          <div className="flex justify-between items-center border-b pb-2">
+                            <h4 className="font-bold text-slate-800 text-base">📖 Indikator & Panduan Penilaian</h4>
+                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Item {sectionItems[currentIndex]?.No_Item}</span>
+                          </div>
+                          {/* FITUR 2: Render Modal Teks Kolom T Preservasi Newlines & Format */}
+                          <div className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2 bg-slate-50 p-3 rounded-xl border">
                             {sectionItems[currentIndex]?.Penjelasan_Indikator}
-                          </p>
+                          </div>
                           <button 
                             onClick={() => setShowIndicatorModal(false)}
-                            className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow"
                           >
                             Paham & Tutup
                           </button>
@@ -680,23 +770,22 @@
                         </div>
                       </div>
 
-                      {/* NEW FEATURE: OUTSTANDING / UNFINISHED ITEMS LIST PER SECTION & PIC */}
+                      {/* FITUR 4: OUTSTANDING CHECKLIST DENGAN HIGHLIGHT PRIORITAS & BADGES */}
                       <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
                         <div className="border-b pb-3">
                           <h3 className="font-bold text-slate-800 text-base">📌 Outstanding: Checklist Belum Diisi</h3>
                           <p className="text-xs text-slate-500">
-                            Breakdown item yang belum diselesaikan per Section, Cabang, dan PIC Petugas yang menangani.
+                            Breakdown item belum diselesaikan per Section & PIC. Item prioritas disorot di posisi teratas.
                           </p>
                         </div>
 
                         {selectedDashCabang === "ALL" ? (
                           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800">
-                            👉 <b>Silakan pilih cabang spesifik</b> pada dropdown filter di atas untuk melihat detail daftar item yang belum diselesaikan beserta nama PIC-nya.
+                            👉 <b>Silakan pilih cabang spesifik</b> pada filter di atas untuk melihat detail item outstanding beserta prioritasnya.
                           </div>
                         ) : (
                           <div className="space-y-3">
                             {SECTIONS.map((sec, i) => {
-                              // Find session for this branch & section
                               const secSession = (dashboardData.sessions || []).find(
                                 s => s.Kode_Cabang === selectedDashCabang && s.Section === sec
                               );
@@ -705,21 +794,26 @@
                               const picJabatan = secSession && secSession.Jabatan ? secSession.Jabatan : "";
                               const status = secSession ? secSession.Status : "NOT_STARTED";
 
-                              // Get answered item IDs for this session
                               const answeredIds = secSession 
                                 ? (dashboardData.responses || [])
                                     .filter(r => r.Session_ID === secSession.Session_ID)
                                     .map(r => r.ID_Checklist)
                                 : [];
 
-                              // Total items in section
                               const sectionMasterItems = masterChecklist.filter(m => m.Section === sec);
                               
-                              // Unfinished items
                               const unfinishedItems = status === "COMPLETED" 
                                 ? [] 
                                 : sectionMasterItems.filter(m => !answeredIds.includes(m.ID_Checklist));
 
+                              // Urutkan item agar item bernilai PRIORITAS (P, GP, SGP) muncul di paling atas
+                              const sortedUnfinishedItems = [...unfinishedItems].sort((a, b) => {
+                                const aPrio = isPriorityItem(a.Kelas_Badge) ? 1 : 0;
+                                const bPrio = isPriorityItem(b.Kelas_Badge) ? 1 : 0;
+                                return bPrio - aPrio;
+                              });
+
+                              const priorityCount = sortedUnfinishedItems.filter(m => isPriorityItem(m.Kelas_Badge)).length;
                               const isExpanded = activeAccordionSec === sec;
 
                               return (
@@ -742,46 +836,71 @@
                                         }`}>
                                           {status}
                                         </span>
+                                        {priorityCount > 0 && (
+                                          <span className="bg-red-600 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full animate-pulse">
+                                            🚨 {priorityCount} Item Prioritas
+                                          </span>
+                                        )}
                                       </div>
                                       <p className="text-xs text-slate-600">
-                                        👤 <b>PIC:</b> {picName ? `${picName} (${picJabatan || 'Petugas'})` : <span className="italic text-slate-400">(Kosong / Belum ada PIC)</span>}
+                                        👤 <b>PIC:</b> {picName ? `${picName} (${picJabatan || 'Petugas'})` : <span className="italic text-slate-400">(Kosong / Belum ada)</span>}
                                       </p>
                                     </div>
 
                                     <div className="text-right flex items-center space-x-2">
                                       <div>
                                         <p className="text-xs font-bold text-slate-800">
-                                          {unfinishedItems.length} Item Sisa
+                                          {unfinishedItems.length} Sisa Item
                                         </p>
                                         <p className="text-[10px] text-slate-500">
-                                          dari {sectionMasterItems.length} Total Item
+                                          dari {sectionMasterItems.length} Total
                                         </p>
                                       </div>
                                       <span className="text-slate-400 font-bold">{isExpanded ? "▲" : "▼"}</span>
                                     </div>
                                   </div>
 
-                                  {/* Accordion Detail Content */}
+                                  {/* Accordion Detail Outstanding Content */}
                                   {isExpanded && (
                                     <div className="p-3 bg-white border-t space-y-2">
-                                      {unfinishedItems.length === 0 ? (
+                                      {sortedUnfinishedItems.length === 0 ? (
                                         <p className="text-xs text-emerald-600 font-semibold text-center py-2">
                                           🎉 Semua item di section ini sudah selesai dikerjakan!
                                         </p>
                                       ) : (
-                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                          <p className="text-[11px] font-bold text-slate-500 uppercase">List Item Belum Diisi:</p>
-                                          {unfinishedItems.map((item, itemIdx) => (
-                                            <div key={itemIdx} className="p-2 border rounded-lg bg-slate-50 text-xs flex justify-between items-start gap-2">
-                                              <div>
-                                                <p className="font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</p>
-                                                <p className="text-[11px] text-slate-500 line-clamp-1">{item.Penjelasan_Indikator}</p>
+                                        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                          <p className="text-[11px] font-bold text-slate-500 uppercase">Daftar Item Belum Diisi:</p>
+                                          {sortedUnfinishedItems.map((item, itemIdx) => {
+                                            const isPrio = isPriorityItem(item.Kelas_Badge);
+
+                                            return (
+                                              <div 
+                                                key={itemIdx} 
+                                                className={`p-2.5 border rounded-xl text-xs flex justify-between items-start gap-2 transition ${
+                                                  isPrio 
+                                                    ? "bg-rose-50 border-rose-300 ring-1 ring-rose-200 shadow-xs" 
+                                                    : "bg-slate-50 border-slate-200"
+                                                }`}
+                                              >
+                                                <div className="space-y-1">
+                                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {isPrio && (
+                                                      <span className="bg-rose-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 shadow-xs">
+                                                        🚨 PRIORITAS
+                                                      </span>
+                                                    )}
+                                                    <p className="font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</p>
+                                                  </div>
+                                                  <div className="text-[11px] text-slate-600 whitespace-pre-line line-clamp-2">
+                                                    {item.Penjelasan_Indikator}
+                                                  </div>
+                                                </div>
+                                                <div className="shrink-0 text-right space-y-1">
+                                                  {renderBadges(item.Kelas_Badge)}
+                                                </div>
                                               </div>
-                                              <div className="shrink-0 text-right">
-                                                {renderBadges(item.Kelas_Badge)}
-                                              </div>
-                                            </div>
-                                          ))}
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </div>
