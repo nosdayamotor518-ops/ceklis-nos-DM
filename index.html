@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Checklist & Dashboard Cabang</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel untuk JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const API_URL = "https://script.google.com/macros/s/AKfycbxwmQMZRl1-tRYiuhghmsfaR5hnI9T1qwaNWC9792BZI-tNISPLQeldA2aC12GzRgI9ow/exec";
+
+    const SECTIONS = [
+      "H1 Premises", "H1 Process", "H1 People",
+      "H23 Premises", "H23 Process", "H23 People"
+    ];
+
+    function App() {
+      // Main App Mode: 'form' or 'dashboard'
+      const [appMode, setAppMode] = React.useState("form");
+
+      // Form States
+      const [step, setStep] = React.useState(1);
+      const [loading, setLoading] = React.useState(true);
+      const [saving, setSaving] = React.useState(false);
+      
+      const [masterCabang, setMasterCabang] = React.useState([]);
+      const [masterChecklist, setMasterChecklist] = React.useState([]);
+      const [lockedSections, setLockedSections] = React.useState({});
+
+      // Form Identity
+      const [selectedCabang, setSelectedCabang] = React.useState("");
+      const [namaUser, setNamaUser] = React.useState("");
+      const [jabatan, setJabatan] = React.useState("");
+      
+      // Active Session & Section
+      const [selectedSection, setSelectedSection] = React.useState("");
+      const [sessionId, setSessionId] = React.useState("");
+      const [currentIndex, setCurrentIndex] = React.useState(0);
+      const [sectionItems, setSectionItems] = React.useState([]);
+      
+      // Active item temp
+      const [selectedRating, setSelectedRating] = React.useState("");
+      const [photoBase64, setPhotoBase64] = React.useState("");
+      const [showIndicatorModal, setShowIndicatorModal] = React.useState(false);
+
+      // Dashboard States
+      const [dashboardData, setDashboardData] = React.useState(null);
+      const [dashLoading, setDashLoading] = React.useState(false);
+      const [selectedDashCabang, setSelectedDashCabang] = React.useState("ALL");
+
+      // Initial Fetch Master Data
+      React.useEffect(() => {
+        fetch(`${API_URL}?action=getInitialData`)
+          .then(res => res.json())
+          .then(res => {
+            if (res.status === "success") {
+              setMasterCabang(res.data.masterCabang || []);
+              setMasterChecklist(res.data.masterChecklist || []);
+            }
+            setLoading(false);
+          })
+          .catch(err => {
+            alert("Gagal terhubung ke Google Sheet.");
+            setLoading(false);
+          });
+      }, []);
+
+      // Fetch Dashboard Data
+      const loadDashboard = () => {
+        setDashLoading(true);
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getDashboardData" })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            setDashboardData(res.data);
+          }
+          setDashLoading(false);
+        })
+        .catch(() => setDashLoading(false));
+      };
+
+      const handleSwitchMode = (mode) => {
+        setAppMode(mode);
+        if (mode === "dashboard") {
+          loadDashboard();
+        }
+      };
+
+      // Branch Selection & Lock Checking
+      const handleBranchSelected = () => {
+        if (!selectedCabang || !namaUser || !jabatan) {
+          alert("Silakan isi Cabang, Nama, dan Jabatan terlebih dahulu!");
+          return;
+        }
+        setLoading(true);
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: selectedCabang })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            setLockedSections(res.data || {});
+            setStep(2);
+          }
+          setLoading(false);
+        });
+      };
+
+      // Select Section
+      const handleSelectSection = (sec) => {
+        const lock = lockedSections[sec];
+        if (lock && lock.status === "COMPLETED") {
+          alert("Section ini sudah selesai dikerjakan!");
+          return;
+        }
+        if (lock && lock.status === "IN_PROGRESS" && lock.user !== namaUser) {
+          alert(`Section ini sedang dikerjakan oleh ${lock.user}. Silakan pilih section lain.`);
+          return;
+        }
+
+        setLoading(true);
+        setSelectedSection(sec);
+
+        const items = masterChecklist.filter(item => item.Section === sec);
+        setSectionItems(items);
+
+        const branchObj = masterCabang.find(c => c.Kode_Cabang === selectedCabang);
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "startOrResumeSession",
+            kodeCabang: selectedCabang,
+            namaCabang: branchObj ? branchObj.Nama_Cabang : selectedCabang,
+            section: sec,
+            namaUser: namaUser,
+            jabatan: jabatan
+          })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            setSessionId(res.data.sessionId);
+            setCurrentIndex(0);
+            setStep(3);
+          }
+          setLoading(false);
+        });
+      };
+
+      // Compress Photo
+      const handlePhotoCapture = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxWidth = 1000;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+            setPhotoBase64(compressedBase64);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Save Answer
+      const handleSaveAnswer = () => {
+        const currentItem = sectionItems[currentIndex];
+        
+        if (!selectedRating) {
+          alert("Pilih hasil penilaian terlebih dahulu!");
+          return;
+        }
+
+        const needPhoto = currentItem.Need_Photo === true || currentItem.Need_Photo === "TRUE";
+        const isExist = selectedRating === "Exist Good" || selectedRating === "Exist Not Good";
+
+        if (needPhoto && isExist && !photoBase64) {
+          alert("Ceklis ini memerlukan bukti foto. Silakan ambil foto terlebih dahulu!");
+          return;
+        }
+
+        setSaving(true);
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "saveAnswer",
+            sessionId: sessionId,
+            idChecklist: currentItem.ID_Checklist,
+            hasilPenilaian: selectedRating,
+            imageBase64: photoBase64
+          })
+        })
+        .then(res => res.json())
+        .then(res => {
+          setSaving(false);
+          setSelectedRating("");
+          setPhotoBase64("");
+
+          if (currentIndex + 1 < sectionItems.length) {
+            setCurrentIndex(currentIndex + 1);
+          } else {
+            completeCurrentSession();
+          }
+        });
+      };
+
+      const completeCurrentSession = () => {
+        setLoading(true);
+        fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "completeSession", sessionId: sessionId })
+        })
+        .then(res => res.json())
+        .then(res => {
+          setLoading(false);
+          setStep(4);
+        });
+      };
+
+      const renderBadges = (badgeString) => {
+        if (!badgeString) return null;
+        const badges = badgeString.split(",").map(b => b.trim());
+        return badges.map((b, i) => {
+          let bg = "bg-gray-100 text-gray-700 border-gray-300";
+          if (b === "P") bg = "bg-red-100 text-red-700 border-red-300 font-bold";
+          if (b === "GP") bg = "bg-purple-100 text-purple-700 border-purple-300 font-bold";
+          if (b === "SGP") bg = "bg-indigo-100 text-indigo-800 border-indigo-300 font-bold";
+          if (b === "Mudah") bg = "bg-green-100 text-green-700 border-green-300";
+          if (b === "Murah") bg = "bg-emerald-100 text-emerald-700 border-emerald-300";
+
+          return (
+            <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${bg} mr-1 inline-block`}>
+              {b}
+            </span>
+          );
+        });
+      };
+
+      if (loading) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-slate-600 font-medium">Memuat data dari Google Sheet...</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-md md:max-w-4xl mx-auto min-h-screen bg-white shadow-md flex flex-col">
+          {/* Header Navigation Tab */}
+          <header className="bg-blue-600 text-white sticky top-0 z-20 shadow-md">
+            <div className="p-4 flex items-center justify-between border-b border-blue-500">
+              <h1 className="font-bold text-lg">Monitoring NOS Cabang</h1>
+              <div className="flex space-x-1 bg-blue-700 p-1 rounded-xl">
+                <button 
+                  onClick={() => handleSwitchMode("form")} 
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${appMode === 'form' ? 'bg-white text-blue-700 shadow' : 'text-blue-100'}`}
+                >
+                  📋 Form Ceklis
+                </button>
+                <button 
+                  onClick={() => handleSwitchMode("dashboard")} 
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${appMode === 'dashboard' ? 'bg-white text-blue-700 shadow' : 'text-blue-100'}`}
+                >
+                  📊 Dashboard
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="p-4 flex-1">
+            {/* VIEW 1: FORM CHECKLIST */}
+            {appMode === "form" && (
+              <div className="max-w-md mx-auto">
+                {step === 1 && (
+                  <div className="space-y-4">
+                    <div className="border-b pb-2">
+                      <h2 className="text-xl font-bold text-slate-800">Identitas Assessor</h2>
+                      <p className="text-xs text-slate-500">Pilih cabang dan nama Anda untuk memulai.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Pilih Cabang</label>
+                      <select 
+                        value={selectedCabang} 
+                        onChange={e => setSelectedCabang(e.target.value)}
+                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800"
+                      >
+                        <option value="">-- Pilih Cabang --</option>
+                        {masterCabang.map((c, i) => (
+                          <option key={i} value={c.Kode_Cabang}>
+                            {c.Kode_Cabang} - {c.Nama_Cabang}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Petugas / User</label>
+                      <input 
+                        type="text" 
+                        placeholder="Contoh: Anton" 
+                        value={namaUser}
+                        onChange={e => setNamaUser(e.target.value)}
+                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Jabatan</label>
+                      <input 
+                        type="text" 
+                        placeholder="Contoh: Auditor / Supervisor" 
+                        value={jabatan}
+                        onChange={e => setJabatan(e.target.value)}
+                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={handleBranchSelected}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md mt-4"
+                    >
+                      Lanjut Pilih Section
+                    </button>
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="space-y-4">
+                    <div className="border-b pb-2 flex justify-between items-center">
+                      <div>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-semibold">
+                          Cabang: {selectedCabang}
+                        </span>
+                        <h2 className="text-xl font-bold text-slate-800 mt-2">Pilih Section Pekerjaan</h2>
+                      </div>
+                      <button onClick={() => setStep(1)} className="text-xs text-blue-600 font-semibold underline">
+                        Ganti User
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {SECTIONS.map((sec, idx) => {
+                        const lock = lockedSections[sec];
+                        const isCompleted = lock && lock.status === "COMPLETED";
+                        const isInProgressOther = lock && lock.status === "IN_PROGRESS" && lock.user !== namaUser;
+                        const isMyProgress = lock && lock.status === "IN_PROGRESS" && lock.user === namaUser;
+
+                        return (
+                          <div 
+                            key={idx} 
+                            onClick={() => !isCompleted && !isInProgressOther && handleSelectSection(sec)}
+                            className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                              isCompleted ? "bg-emerald-50 border-emerald-300 opacity-70 cursor-not-allowed" :
+                              isInProgressOther ? "bg-amber-50 border-amber-300 opacity-70 cursor-not-allowed" :
+                              isMyProgress ? "bg-blue-50 border-blue-400 ring-2 ring-blue-300" :
+                              "bg-white border-slate-200 hover:border-blue-400 shadow-sm"
+                            }`}
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{sec}</p>
+                              <p className="text-xs text-slate-500">
+                                {isCompleted && `✓ Selesai (${lock.user})`}
+                                {isInProgressOther && `⏳ Sedang dikerjakan oleh ${lock.user}`}
+                                {isMyProgress && `🔄 Lanjutkan pekerjaan Anda`}
+                                {!lock && `Bisa Dikerjakan`}
+                              </p>
+                            </div>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border">
+                              {isCompleted ? "Completed" : isInProgressOther ? "Locked" : "Pilih"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {step === 3 && sectionItems.length > 0 && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                        <span>{selectedSection}</span>
+                        <span>Item {currentIndex + 1} dari {sectionItems.length}</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-blue-600 h-full transition-all duration-300" 
+                          style={{ width: `${((currentIndex + 1) / sectionItems.length) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const item = sectionItems[currentIndex];
+                      const needPhoto = item.Need_Photo === true || item.Need_Photo === "TRUE";
+
+                      return (
+                        <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
+                          <div>
+                            <div className="mb-2">
+                              {renderBadges(item.Kelas_Badge)}
+                              {needPhoto && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-300 font-medium">
+                                  📷 Wajib Foto
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</h3>
+                          </div>
+
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-bold text-amber-800">Indikator Penilaian</span>
+                              <button 
+                                onClick={() => setShowIndicatorModal(true)}
+                                className="text-xs bg-amber-200 text-amber-900 font-semibold px-2 py-0.5 rounded"
+                              >
+                                Baca Detail
+                              </button>
+                            </div>
+                            <p className="text-xs text-slate-600 line-clamp-2">{item.Penjelasan_Indikator}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Hasil Penilaian</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { label: "Exist Good", color: "border-emerald-500 bg-emerald-50 text-emerald-800" },
+                                { label: "Exist Not Good", color: "border-amber-500 bg-amber-50 text-amber-800" },
+                                { label: "Not Exist", color: "border-rose-500 bg-rose-50 text-rose-800" },
+                                { label: "Not Available", color: "border-slate-400 bg-slate-50 text-slate-700" }
+                              ].map((opt, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => setSelectedRating(opt.label)}
+                                  className={`p-3 rounded-xl border-2 font-bold text-xs text-center transition ${
+                                    selectedRating === opt.label ? `${opt.color} ring-2 ring-blue-400` : "border-slate-200 bg-white text-slate-700"
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {needPhoto && (selectedRating === "Exist Good" || selectedRating === "Exist Not Good") && (
+                            <div className="border-t pt-3 space-y-2">
+                              <label className="block text-xs font-bold text-slate-700">Bukti Foto (Wajib)</label>
+                              {photoBase64 ? (
+                                <div className="relative rounded-xl overflow-hidden border border-slate-300">
+                                  <img src={photoBase64} alt="Evidence" className="w-full h-40 object-cover" />
+                                  <button 
+                                    onClick={() => setPhotoBase64("")}
+                                    className="absolute top-2 right-2 bg-rose-600 text-white text-xs px-2 py-1 rounded-lg"
+                                  >
+                                    Hapus / Foto Ulang
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-blue-300 rounded-xl bg-blue-50 cursor-pointer">
+                                  <span className="text-2xl mb-1">📷</span>
+                                  <span className="text-xs font-bold text-blue-700">Ambil Foto dari Kamera</span>
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    onChange={handlePhotoCapture} 
+                                    className="hidden" 
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          )}
+
+                          <button 
+                            disabled={saving}
+                            onClick={handleSaveAnswer}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md"
+                          >
+                            {saving ? "Menyimpan..." : "Simpan & Lanjut Item Berikutnya →"}
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {showIndicatorModal && (
+                      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl p-5 max-w-sm w-full space-y-3">
+                          <h4 className="font-bold text-slate-800">Penjelasan Indikator</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed">
+                            {sectionItems[currentIndex]?.Penjelasan_Indikator}
+                          </p>
+                          <button 
+                            onClick={() => setShowIndicatorModal(false)}
+                            className="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm"
+                          >
+                            Paham & Tutup
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {step === 4 && (
+                  <div className="text-center py-10 space-y-4">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✓</div>
+                    <h2 className="text-2xl font-bold text-slate-800">Section Selesai!</h2>
+                    <p className="text-xs text-slate-500">Semua item di section <b>{selectedSection}</b> telah tersimpan ke Google Sheet.</p>
+                    <button onClick={() => setStep(2)} className="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl">
+                      Pilih Section Lain
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VIEW 2: DASHBOARD MONITORING & SKORING */}
+            {appMode === "dashboard" && (
+              <div className="space-y-6">
+                {/* Dashboard Filter Bar */}
+                <div className="bg-slate-100 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">Dashboard Process Report Cabang</h2>
+                    <p className="text-xs text-slate-500">Monitoring real-time progress, skoring, dan aktivitas user.</p>
+                  </div>
+
+                  <div className="flex items-center space-x-2 w-full md:w-auto">
+                    <select 
+                      value={selectedDashCabang} 
+                      onChange={e => setSelectedDashCabang(e.target.value)}
+                      className="p-2.5 border rounded-xl bg-white text-slate-800 text-sm font-medium w-full md:w-auto"
+                    >
+                      <option value="ALL">-- Semua Cabang --</option>
+                      {masterCabang.map((c, i) => (
+                        <option key={i} value={c.Kode_Cabang}>{c.Kode_Cabang} - {c.Nama_Cabang}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={loadDashboard}
+                      className="p-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700"
+                    >
+                      🔄 Refresh
+                    </button>
+                  </div>
+                </div>
+
+                {dashLoading ? (
+                  <div className="py-20 text-center">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="mt-3 text-sm text-slate-600 font-medium">Mengkalkulasi data dari Google Sheet...</p>
+                  </div>
+                ) : dashboardData ? (() => {
+                  const filteredSessions = selectedDashCabang === "ALL" 
+                    ? (dashboardData.sessions || [])
+                    : (dashboardData.sessions || []).filter(s => s.Kode_Cabang === selectedDashCabang);
+
+                  const sessionIds = filteredSessions.map(s => s.Session_ID);
+                  const filteredResponses = (dashboardData.responses || []).filter(r => sessionIds.includes(r.Session_ID));
+
+                  // Analytics Calculations
+                  const totalAnswered = filteredResponses.length;
+                  const totalMasterItems = masterChecklist.length || 414;
+                  const targetItems = selectedDashCabang === "ALL" 
+                    ? totalMasterItems * (masterCabang.length || 1)
+                    : totalMasterItems;
+                  
+                  const completionPercentage = targetItems > 0 ? Math.round((totalAnswered / targetItems) * 100) : 0;
+
+                  // Rating Breakdown
+                  const existGoodCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Exist Good").length;
+                  const existNotGoodCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Exist Not Good").length;
+                  const notExistCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Exist").length;
+                  const notAvailCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Available").length;
+
+                  // Score Calculation (Total Standard Points earned from Exist Good)
+                  const scorePoints = filteredResponses.reduce((acc, resp) => {
+                    if (resp.Hasil_Penilaian === "Exist Good") {
+                      const itemObj = masterChecklist.find(m => m.ID_Checklist === resp.ID_Checklist);
+                      const points = itemObj ? (parseFloat(itemObj.Poin_Standar) || 0) : 0;
+                      return acc + points;
+                    }
+                    return acc;
+                  }, 0);
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl">
+                          <p className="text-xs text-blue-700 font-bold uppercase">Total Progress</p>
+                          <p className="text-2xl font-black text-blue-900 mt-1">{completionPercentage}%</p>
+                          <p className="text-xs text-blue-600 mt-0.5">{totalAnswered} / {targetItems} Item</p>
+                        </div>
+
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
+                          <p className="text-xs text-emerald-700 font-bold uppercase">Total Skor Poin</p>
+                          <p className="text-2xl font-black text-emerald-900 mt-1">{scorePoints}</p>
+                          <p className="text-xs text-emerald-600 mt-0.5">Dari item Exist Good</p>
+                        </div>
+
+                        <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl">
+                          <p className="text-xs text-purple-700 font-bold uppercase">Exist Good</p>
+                          <p className="text-2xl font-black text-purple-900 mt-1">{existGoodCount}</p>
+                          <p className="text-xs text-purple-600 mt-0.5">Penilaian Sesuai</p>
+                        </div>
+
+                        <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl">
+                          <p className="text-xs text-rose-700 font-bold uppercase">Not Good / Not Exist</p>
+                          <p className="text-2xl font-black text-rose-900 mt-1">{existNotGoodCount + notExistCount}</p>
+                          <p className="text-xs text-rose-600 mt-0.5">Temuan / Koreksi</p>
+                        </div>
+                      </div>
+
+                      {/* Section Status Matrix */}
+                      <div className="bg-white border rounded-2xl p-4 shadow-sm">
+                        <h3 className="font-bold text-slate-800 mb-3 text-sm">Status Pengerjaan per Section</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {SECTIONS.map((sec, i) => {
+                            const secMasterCount = masterChecklist.filter(m => m.Section === sec).length;
+                            const secSession = filteredSessions.find(s => s.Section === sec);
+                            const status = secSession ? secSession.Status : "NOT_STARTED";
+                            const user = secSession ? secSession.Nama_User : "-";
+
+                            return (
+                              <div key={i} className="border p-3 rounded-xl flex items-center justify-between">
+                                <div>
+                                  <p className="font-bold text-slate-800 text-sm">{sec}</p>
+                                  <p className="text-xs text-slate-500">
+                                    {status === "COMPLETED" && `✓ Selesai oleh ${user}`}
+                                    {status === "IN_PROGRESS" && `⏳ Dikerjakan oleh ${user}`}
+                                    {status === "NOT_STARTED" && `Belum Dimulai`}
+                                  </p>
+                                </div>
+                                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
+                                  status === "COMPLETED" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                                  status === "IN_PROGRESS" ? "bg-amber-100 text-amber-800 border-amber-300" :
+                                  "bg-slate-100 text-slate-600 border-slate-300"
+                                }`}>
+                                  {status}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Active User Log Table */}
+                      <div className="bg-white border rounded-2xl p-4 shadow-sm overflow-x-auto">
+                        <h3 className="font-bold text-slate-800 mb-3 text-sm">Daftar Petugas & Sesi Aktif</h3>
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-slate-100 text-slate-700 font-bold">
+                            <tr>
+                              <th className="p-2.5">Cabang</th>
+                              <th className="p-2.5">Section</th>
+                              <th className="p-2.5">Petugas</th>
+                              <th className="p-2.5">Jabatan</th>
+                              <th className="p-2.5">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y text-slate-700">
+                            {filteredSessions.length > 0 ? filteredSessions.map((s, idx) => (
+                              <tr key={idx}>
+                                <td className="p-2.5 font-semibold">{s.Nama_Cabang || s.Kode_Cabang}</td>
+                                <td className="p-2.5">{s.Section}</td>
+                                <td className="p-2.5 font-semibold">{s.Nama_User}</td>
+                                <td className="p-2.5">{s.Jabatan}</td>
+                                <td className="p-2.5">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    s.Status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {s.Status}
+                                  </span>
+                                </td>
+                              </tr>
+                            )) : (
+                              <tr>
+                                <td colSpan="5" className="p-4 text-center text-slate-400">Belum ada aktivitas pengerjaan.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div className="py-10 text-center text-slate-500 text-sm">Klik tombol Refresh untuk memuat data.</div>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
