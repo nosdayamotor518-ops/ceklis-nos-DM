@@ -59,6 +59,7 @@
       const [dashboardData, setDashboardData] = React.useState(null);
       const [dashLoading, setDashLoading] = React.useState(false);
       const [selectedDashCabang, setSelectedDashCabang] = React.useState("ALL");
+      const [activeAccordionSec, setActiveAccordionSec] = React.useState(null);
 
       // Initial Fetch Master Data
       React.useEffect(() => {
@@ -557,7 +558,7 @@
                 <div className="bg-slate-100 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-slate-800">Dashboard Process Report Cabang</h2>
-                    <p className="text-xs text-slate-500">Monitoring real-time progress, skoring, dan aktivitas user.</p>
+                    <p className="text-xs text-slate-500">Monitoring real-time progress, skoring, dan outstanding item.</p>
                   </div>
 
                   <div className="flex items-center space-x-2 w-full md:w-auto">
@@ -566,7 +567,7 @@
                       onChange={e => setSelectedDashCabang(e.target.value)}
                       className="p-2.5 border rounded-xl bg-white text-slate-800 text-sm font-medium w-full md:w-auto"
                     >
-                      <option value="ALL">-- Semua Cabang --</option>
+                      <option value="ALL">-- Pilih / Filter Cabang --</option>
                       {masterCabang.map((c, i) => (
                         <option key={i} value={c.Kode_Cabang}>{c.Kode_Cabang} - {c.Nama_Cabang}</option>
                       ))}
@@ -608,7 +609,7 @@
                   const notExistCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Exist").length;
                   const notAvailCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Available").length;
 
-                  // Score Calculation (Total Standard Points earned from Exist Good)
+                  // Score Calculation
                   const scorePoints = filteredResponses.reduce((acc, resp) => {
                     if (resp.Hasil_Penilaian === "Exist Good") {
                       const itemObj = masterChecklist.find(m => m.ID_Checklist === resp.ID_Checklist);
@@ -652,19 +653,18 @@
                         <h3 className="font-bold text-slate-800 mb-3 text-sm">Status Pengerjaan per Section</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {SECTIONS.map((sec, i) => {
-                            const secMasterCount = masterChecklist.filter(m => m.Section === sec).length;
                             const secSession = filteredSessions.find(s => s.Section === sec);
                             const status = secSession ? secSession.Status : "NOT_STARTED";
-                            const user = secSession ? secSession.Nama_User : "-";
+                            const user = secSession ? secSession.Nama_User : "";
 
                             return (
                               <div key={i} className="border p-3 rounded-xl flex items-center justify-between">
                                 <div>
                                   <p className="font-bold text-slate-800 text-sm">{sec}</p>
                                   <p className="text-xs text-slate-500">
-                                    {status === "COMPLETED" && `✓ Selesai oleh ${user}`}
+                                    {status === "COMPLETED" && `✓ Selesai (${user})`}
                                     {status === "IN_PROGRESS" && `⏳ Dikerjakan oleh ${user}`}
-                                    {status === "NOT_STARTED" && `Belum Dimulai`}
+                                    {status === "NOT_STARTED" && `Belum Dimulai ${user ? `(${user})` : '(Kosong)'}`}
                                   </p>
                                 </div>
                                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
@@ -680,6 +680,119 @@
                         </div>
                       </div>
 
+                      {/* NEW FEATURE: OUTSTANDING / UNFINISHED ITEMS LIST PER SECTION & PIC */}
+                      <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
+                        <div className="border-b pb-3">
+                          <h3 className="font-bold text-slate-800 text-base">📌 Outstanding: Checklist Belum Diisi</h3>
+                          <p className="text-xs text-slate-500">
+                            Breakdown item yang belum diselesaikan per Section, Cabang, dan PIC Petugas yang menangani.
+                          </p>
+                        </div>
+
+                        {selectedDashCabang === "ALL" ? (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800">
+                            👉 <b>Silakan pilih cabang spesifik</b> pada dropdown filter di atas untuk melihat detail daftar item yang belum diselesaikan beserta nama PIC-nya.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {SECTIONS.map((sec, i) => {
+                              // Find session for this branch & section
+                              const secSession = (dashboardData.sessions || []).find(
+                                s => s.Kode_Cabang === selectedDashCabang && s.Section === sec
+                              );
+
+                              const picName = secSession && secSession.Nama_User ? secSession.Nama_User : "";
+                              const picJabatan = secSession && secSession.Jabatan ? secSession.Jabatan : "";
+                              const status = secSession ? secSession.Status : "NOT_STARTED";
+
+                              // Get answered item IDs for this session
+                              const answeredIds = secSession 
+                                ? (dashboardData.responses || [])
+                                    .filter(r => r.Session_ID === secSession.Session_ID)
+                                    .map(r => r.ID_Checklist)
+                                : [];
+
+                              // Total items in section
+                              const sectionMasterItems = masterChecklist.filter(m => m.Section === sec);
+                              
+                              // Unfinished items
+                              const unfinishedItems = status === "COMPLETED" 
+                                ? [] 
+                                : sectionMasterItems.filter(m => !answeredIds.includes(m.ID_Checklist));
+
+                              const isExpanded = activeAccordionSec === sec;
+
+                              return (
+                                <div key={i} className="border rounded-xl overflow-hidden shadow-sm">
+                                  <div 
+                                    onClick={() => setActiveAccordionSec(isExpanded ? null : sec)}
+                                    className={`p-3.5 flex items-center justify-between cursor-pointer transition ${
+                                      status === 'COMPLETED' ? 'bg-emerald-50 hover:bg-emerald-100' :
+                                      status === 'IN_PROGRESS' ? 'bg-amber-50 hover:bg-amber-100' :
+                                      'bg-slate-50 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    <div className="space-y-0.5">
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-bold text-slate-800 text-sm">{sec}</span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                          status === 'COMPLETED' ? 'bg-emerald-200 text-emerald-800' :
+                                          status === 'IN_PROGRESS' ? 'bg-amber-200 text-amber-800' :
+                                          'bg-slate-200 text-slate-700'
+                                        }`}>
+                                          {status}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-slate-600">
+                                        👤 <b>PIC:</b> {picName ? `${picName} (${picJabatan || 'Petugas'})` : <span className="italic text-slate-400">(Kosong / Belum ada PIC)</span>}
+                                      </p>
+                                    </div>
+
+                                    <div className="text-right flex items-center space-x-2">
+                                      <div>
+                                        <p className="text-xs font-bold text-slate-800">
+                                          {unfinishedItems.length} Item Sisa
+                                        </p>
+                                        <p className="text-[10px] text-slate-500">
+                                          dari {sectionMasterItems.length} Total Item
+                                        </p>
+                                      </div>
+                                      <span className="text-slate-400 font-bold">{isExpanded ? "▲" : "▼"}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Accordion Detail Content */}
+                                  {isExpanded && (
+                                    <div className="p-3 bg-white border-t space-y-2">
+                                      {unfinishedItems.length === 0 ? (
+                                        <p className="text-xs text-emerald-600 font-semibold text-center py-2">
+                                          🎉 Semua item di section ini sudah selesai dikerjakan!
+                                        </p>
+                                      ) : (
+                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                          <p className="text-[11px] font-bold text-slate-500 uppercase">List Item Belum Diisi:</p>
+                                          {unfinishedItems.map((item, itemIdx) => (
+                                            <div key={itemIdx} className="p-2 border rounded-lg bg-slate-50 text-xs flex justify-between items-start gap-2">
+                                              <div>
+                                                <p className="font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</p>
+                                                <p className="text-[11px] text-slate-500 line-clamp-1">{item.Penjelasan_Indikator}</p>
+                                              </div>
+                                              <div className="shrink-0 text-right">
+                                                {renderBadges(item.Kelas_Badge)}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
                       {/* Active User Log Table */}
                       <div className="bg-white border rounded-2xl p-4 shadow-sm overflow-x-auto">
                         <h3 className="font-bold text-slate-800 mb-3 text-sm">Daftar Petugas & Sesi Aktif</h3>
@@ -688,7 +801,7 @@
                             <tr>
                               <th className="p-2.5">Cabang</th>
                               <th className="p-2.5">Section</th>
-                              <th className="p-2.5">Petugas</th>
+                              <th className="p-2.5">Petugas / PIC</th>
                               <th className="p-2.5">Jabatan</th>
                               <th className="p-2.5">Status</th>
                             </tr>
@@ -698,8 +811,8 @@
                               <tr key={idx}>
                                 <td className="p-2.5 font-semibold">{s.Nama_Cabang || s.Kode_Cabang}</td>
                                 <td className="p-2.5">{s.Section}</td>
-                                <td className="p-2.5 font-semibold">{s.Nama_User}</td>
-                                <td className="p-2.5">{s.Jabatan}</td>
+                                <td className="p-2.5 font-semibold">{s.Nama_User || <span className="italic text-slate-400">(Kosong)</span>}</td>
+                                <td className="p-2.5">{s.Jabatan || "-"}</td>
                                 <td className="p-2.5">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                     s.Status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
