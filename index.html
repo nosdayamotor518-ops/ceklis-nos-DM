@@ -49,7 +49,7 @@
         const sizeClass = isLarge ? "text-xs px-2.5 py-1" : "text-[10px] px-2 py-0.5";
 
         return (
-          <span key={i} className={`${sizeClass} rounded-full border${bg} inline-flex items-center gap-1 shadow-xs`}>
+          <span key={i} className={`${sizeClass} rounded-full border ${bg} inline-flex items-center gap-1 shadow-xs`}>
             {(b === 'P' || b === 'GP' || b === 'SGP') && <span>⭐</span>}
             {b}
           </span>
