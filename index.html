@@ -19,6 +19,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
+    // URL Web App Deployment Apps Script Terbaru Kamu
     const API_URL = "https://script.google.com/macros/s/AKfycbwL8fssAEfYxMchqCb9450jqff6aU4-mR7l-fV28TwWl_1fjYonhcCkYpFxKSQL8-TbyQ/exec";
 
     const SECTIONS = [
@@ -26,17 +27,17 @@
       "H23 Premises", "H23 Process", "H23 People"
     ];
 
-    // Helper Helper Function Prioritas Badge
+    // Helper Function Prioritas Badge
     const isPriorityItem = (badgeString) => {
       if (!badgeString) return false;
-      const badges = badgeString.split(",").map(b => b.trim());
+      const badges = String(badgeString).split(",").map(b => b.trim());
       return badges.some(b => ["P", "GP", "SGP"].includes(b));
     };
 
     // Helper Component Render Badges
     const renderBadges = (badgeString, isLarge = false) => {
       if (!badgeString) return null;
-      const badges = badgeString.split(",").map(b => b.trim());
+      const badges = String(badgeString).split(",").map(b => b.trim());
       return badges.map((b, i) => {
         let bg = "bg-slate-100 text-slate-700 border-slate-300";
         if (b === "P") bg = "bg-red-600 text-white border-red-700 font-black shadow-sm animate-pulse";
@@ -109,18 +110,19 @@
           });
       }, []);
 
-      // Handle Perubahan Pilihan Cabang & Ambil Riwayat User
+      // Handle Perubahan Pilihan Cabang & Ambil Riwayat User (Perbaikan Trimming Bug Cabang)
       const handleCabangChange = (kodeCabang) => {
-        setSelectedCabang(kodeCabang);
+        const cleanKode = String(kodeCabang).trim();
+        setSelectedCabang(cleanKode);
         setNamaUser("");
         setJabatan("");
         setBranchUsers([]);
 
-        if (!kodeCabang) return;
+        if (!cleanKode) return;
 
         fetch(API_URL, {
           method: "POST",
-          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: kodeCabang })
+          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: cleanKode })
         })
         .then(res => res.json())
         .then(res => {
@@ -187,10 +189,10 @@
         setLoading(true);
         setSelectedSection(sec);
 
-        const items = masterChecklist.filter(item => item.Section === sec);
+        const items = masterChecklist.filter(item => String(item.Section).trim() === String(sec).trim());
         setSectionItems(items);
 
-        const branchObj = masterCabang.find(c => c.Kode_Cabang === selectedCabang);
+        const branchObj = masterCabang.find(c => String(c.Kode_Cabang).trim() === String(selectedCabang).trim());
         fetch(API_URL, {
           method: "POST",
           body: JSON.stringify({
@@ -254,7 +256,7 @@
           return;
         }
 
-        const needPhoto = currentItem.Need_Photo === true || currentItem.Need_Photo === "TRUE";
+        const needPhoto = currentItem.Need_Photo === true || String(currentItem.Need_Photo).toUpperCase() === "TRUE";
         const isExist = selectedRating === "Exist Good" || selectedRating === "Exist Not Good";
 
         if (needPhoto && isExist && !photoBase64) {
@@ -351,15 +353,19 @@
                         className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800 font-medium"
                       >
                         <option value="">-- Pilih Cabang --</option>
-                        {masterCabang.map((c, i) => (
-                          <option key={i} value={c.Kode_Cabang}>
-                            {c.Kode_Cabang} - {c.Nama_Cabang}
-                          </option>
-                        ))}
+                        {masterCabang.map((c, i) => {
+                          const kode = String(c.Kode_Cabang || "").trim();
+                          const nama = String(c.Nama_Cabang || "").trim();
+                          return (
+                            <option key={i} value={kode}>
+                              {kode ? `${kode} - ` : ""}{nama}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
-                    {/* FITUR 3: Dropdown Nama Terdaftar untuk Cabang Tersebut */}
+                    {/* Dropdown Nama Terdaftar untuk Cabang Tersebut */}
                     {branchUsers.length > 0 && (
                       <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl space-y-1">
                         <label className="block text-xs font-bold text-blue-900">
@@ -398,7 +404,7 @@
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Jabatan</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Jabatan Assessor / Petugas</label>
                       <input 
                         type="text" 
                         placeholder="Contoh: Auditor / Supervisor" 
@@ -485,13 +491,14 @@
 
                     {(() => {
                       const item = sectionItems[currentIndex];
-                      const needPhoto = item.Need_Photo === true || item.Need_Photo === "TRUE";
+                      const needPhoto = item.Need_Photo === true || String(item.Need_Photo).toUpperCase() === "TRUE";
                       const isPrio = isPriorityItem(item.Kelas_Badge);
+                      const pjJabatan = item.Jabatan_Penanggung_Jawab || item.Jabatan_PJ || item["Jabatan Penanggung Jawab"];
 
                       return (
                         <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
                           
-                          {/* FITUR 1: Visual Indicator Kelas_Badge Menonjol */}
+                          {/* Visual Indicator Kelas_Badge Menonjol */}
                           <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2 ${
                             isPrio 
                               ? "bg-slate-900 text-white border-slate-800 shadow-lg ring-2 ring-red-500/50" 
@@ -514,29 +521,44 @@
                           </div>
 
                           <div>
-                            <div className="mb-2">
+                            <div className="mb-2 flex flex-wrap items-center gap-1.5">
                               {needPhoto && (
                                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-300 font-bold">
                                   📷 Wajib Foto Bukti
+                                </span>
+                              )}
+                              {/* PENAMBAHAN FITUR 2: Highlight Jabatan Penanggung Jawab Item */}
+                              {pjJabatan && (
+                                <span className="text-xs bg-indigo-100 text-indigo-800 border border-indigo-300 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                  👔 PJ: {pjJabatan}
                                 </span>
                               )}
                             </div>
                             <h3 className="text-lg font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</h3>
                           </div>
 
-                          {/* FITUR 2: Format Indikator Kolom T Rapi (Bullet, Numbering, Paragraf) */}
+                          {/* Format Indikator Kolom T Rapi + Tampilan Jabatan Penanggung Jawab */}
                           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
                             <div className="flex justify-between items-center border-b border-amber-200 pb-1">
                               <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
-                                📋 Indikator Penilaian (Kolom T)
+                                📋 Indikator & Panduan Penilaian (Kolom T)
                               </span>
                               <button 
                                 onClick={() => setShowIndicatorModal(true)}
                                 className="text-[11px] bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold px-2 py-0.5 rounded transition"
                               >
-                                🔍 Perbesar Tampilan
+                                🔍 Perbesar
                               </button>
                             </div>
+
+                            {/* PENAMBAHAN FITUR 2: Banner Jabatan Penanggung Jawab di Keterangan Ceklis */}
+                            {pjJabatan && (
+                              <div className="bg-amber-100/80 p-2 rounded-lg text-xs font-bold text-amber-950 flex items-center gap-1.5 border border-amber-300">
+                                <span>👔</span>
+                                <span>Jabatan Penanggung Jawab (Yang Diperiksa): <u className="text-blue-900">{pjJabatan}</u></span>
+                              </div>
+                            )}
+
                             <div className="text-xs text-slate-700 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto pr-1">
                               {item.Penjelasan_Indikator}
                             </div>
@@ -612,7 +634,14 @@
                             <h4 className="font-bold text-slate-800 text-base">📖 Indikator & Panduan Penilaian</h4>
                             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Item {sectionItems[currentIndex]?.No_Item}</span>
                           </div>
-                          {/* FITUR 2: Render Modal Teks Kolom T Preservasi Newlines & Format */}
+
+                          {(sectionItems[currentIndex]?.Jabatan_Penanggung_Jawab || sectionItems[currentIndex]?.Jabatan_PJ) && (
+                            <div className="bg-blue-50 border border-blue-200 text-blue-900 p-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                              <span>👔</span>
+                              <span>Penanggung Jawab Item: {sectionItems[currentIndex]?.Jabatan_Penanggung_Jawab || sectionItems[currentIndex]?.Jabatan_PJ}</span>
+                            </div>
+                          )}
+
                           <div className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto pr-2 bg-slate-50 p-3 rounded-xl border">
                             {sectionItems[currentIndex]?.Penjelasan_Indikator}
                           </div>
@@ -658,9 +687,15 @@
                       className="p-2.5 border rounded-xl bg-white text-slate-800 text-sm font-medium w-full md:w-auto"
                     >
                       <option value="ALL">-- Pilih / Filter Cabang --</option>
-                      {masterCabang.map((c, i) => (
-                        <option key={i} value={c.Kode_Cabang}>{c.Kode_Cabang} - {c.Nama_Cabang}</option>
-                      ))}
+                      {masterCabang.map((c, i) => {
+                        const kode = String(c.Kode_Cabang || "").trim();
+                        const nama = String(c.Nama_Cabang || "").trim();
+                        return (
+                          <option key={i} value={kode}>
+                            {kode ? `${kode} - ` : ""}{nama}
+                          </option>
+                        );
+                      })}
                     </select>
                     <button 
                       onClick={loadDashboard}
@@ -679,7 +714,7 @@
                 ) : dashboardData ? (() => {
                   const filteredSessions = selectedDashCabang === "ALL" 
                     ? (dashboardData.sessions || [])
-                    : (dashboardData.sessions || []).filter(s => s.Kode_Cabang === selectedDashCabang);
+                    : (dashboardData.sessions || []).filter(s => String(s.Kode_Cabang).trim() === String(selectedDashCabang).trim());
 
                   const sessionIds = filteredSessions.map(s => s.Session_ID);
                   const filteredResponses = (dashboardData.responses || []).filter(r => sessionIds.includes(r.Session_ID));
@@ -743,7 +778,7 @@
                         <h3 className="font-bold text-slate-800 mb-3 text-sm">Status Pengerjaan per Section</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {SECTIONS.map((sec, i) => {
-                            const secSession = filteredSessions.find(s => s.Section === sec);
+                            const secSession = filteredSessions.find(s => String(s.Section).trim() === String(sec).trim());
                             const status = secSession ? secSession.Status : "NOT_STARTED";
                             const user = secSession ? secSession.Nama_User : "";
 
@@ -770,7 +805,7 @@
                         </div>
                       </div>
 
-                      {/* FITUR 4: OUTSTANDING CHECKLIST DENGAN HIGHLIGHT PRIORITAS & BADGES */}
+                      {/* OUTSTANDING CHECKLIST DENGAN HIGHLIGHT PRIORITAS & BADGES */}
                       <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
                         <div className="border-b pb-3">
                           <h3 className="font-bold text-slate-800 text-base">📌 Outstanding: Checklist Belum Diisi</h3>
@@ -787,7 +822,7 @@
                           <div className="space-y-3">
                             {SECTIONS.map((sec, i) => {
                               const secSession = (dashboardData.sessions || []).find(
-                                s => s.Kode_Cabang === selectedDashCabang && s.Section === sec
+                                s => String(s.Kode_Cabang).trim() === String(selectedDashCabang).trim() && String(s.Section).trim() === String(sec).trim()
                               );
 
                               const picName = secSession && secSession.Nama_User ? secSession.Nama_User : "";
@@ -800,7 +835,7 @@
                                     .map(r => r.ID_Checklist)
                                 : [];
 
-                              const sectionMasterItems = masterChecklist.filter(m => m.Section === sec);
+                              const sectionMasterItems = masterChecklist.filter(m => String(m.Section).trim() === String(sec).trim());
                               
                               const unfinishedItems = status === "COMPLETED" 
                                 ? [] 
@@ -872,6 +907,7 @@
                                           <p className="text-[11px] font-bold text-slate-500 uppercase">Daftar Item Belum Diisi:</p>
                                           {sortedUnfinishedItems.map((item, itemIdx) => {
                                             const isPrio = isPriorityItem(item.Kelas_Badge);
+                                            const itemPJ = item.Jabatan_Penanggung_Jawab || item.Jabatan_PJ;
 
                                             return (
                                               <div 
@@ -891,6 +927,14 @@
                                                     )}
                                                     <p className="font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</p>
                                                   </div>
+
+                                                  {itemPJ && (
+                                                    <p className="text-[11px] font-semibold text-indigo-700 flex items-center gap-1">
+                                                      <span>👔 PJ:</span> 
+                                                      <span className="bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">{itemPJ}</span>
+                                                    </p>
+                                                  )}
+
                                                   <div className="text-[11px] text-slate-600 whitespace-pre-line line-clamp-2">
                                                     {item.Penjelasan_Indikator}
                                                   </div>
@@ -921,7 +965,7 @@
                               <th className="p-2.5">Cabang</th>
                               <th className="p-2.5">Section</th>
                               <th className="p-2.5">Petugas / PIC</th>
-                              <th className="p-2.5">Jabatan</th>
+                              <th className="p-2.5">Jabatan Assessor</th>
                               <th className="p-2.5">Status</th>
                             </tr>
                           </thead>
