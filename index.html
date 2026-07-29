@@ -110,15 +110,18 @@
           });
       }, []);
 
-      // Handle Perubahan Pilihan Cabang & Ambil Riwayat User (Perbaikan Trimming Bug Cabang)
-      const handleCabangChange = (kodeCabang) => {
-        const cleanKode = String(kodeCabang).trim();
-        setSelectedCabang(cleanKode);
+      // Handle Perubahan Pilihan Cabang (Akurat berdasarkan Nama Cabang)
+      const handleCabangChange = (namaCabang) => {
+        const cleanNama = String(namaCabang).trim();
+        setSelectedCabang(cleanNama);
         setNamaUser("");
         setJabatan("");
         setBranchUsers([]);
 
-        if (!cleanKode) return;
+        if (!cleanNama) return;
+
+        const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === cleanNama);
+        const cleanKode = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : cleanNama;
 
         fetch(API_URL, {
           method: "POST",
@@ -129,7 +132,6 @@
           if (res.status === "success") {
             setLockedSections(res.data || {});
             
-            // Ekstrak daftar user unik yang sudah ada di cabang ini
             const userMap = [];
             Object.values(res.data || {}).forEach(item => {
               if (item && item.user && !userMap.some(u => u.nama === item.user)) {
@@ -192,13 +194,15 @@
         const items = masterChecklist.filter(item => String(item.Section).trim() === String(sec).trim());
         setSectionItems(items);
 
-        const branchObj = masterCabang.find(c => String(c.Kode_Cabang).trim() === String(selectedCabang).trim());
+        const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === String(selectedCabang).trim());
+        const kodeCabangKirim = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : selectedCabang;
+
         fetch(API_URL, {
           method: "POST",
           body: JSON.stringify({
             action: "startOrResumeSession",
-            kodeCabang: selectedCabang,
-            namaCabang: branchObj ? branchObj.Nama_Cabang : selectedCabang,
+            kodeCabang: kodeCabangKirim,
+            namaCabang: selectedCabang,
             section: sec,
             namaUser: namaUser,
             jabatan: jabatan
@@ -357,7 +361,7 @@
                           const kode = String(c.Kode_Cabang || "").trim();
                           const nama = String(c.Nama_Cabang || "").trim();
                           return (
-                            <option key={i} value={kode}>
+                            <option key={i} value={nama}>
                               {kode ? `${kode} - ` : ""}{nama}
                             </option>
                           );
@@ -498,7 +502,7 @@
                       return (
                         <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
                           
-                          {/* Visual Indicator Kelas_Badge Menonjol */}
+                          {/* Visual Indicator Kelas_Badge */}
                           <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2 ${
                             isPrio 
                               ? "bg-slate-900 text-white border-slate-800 shadow-lg ring-2 ring-red-500/50" 
@@ -527,7 +531,7 @@
                                   📷 Wajib Foto Bukti
                                 </span>
                               )}
-                              {/* PENAMBAHAN FITUR 2: Highlight Jabatan Penanggung Jawab Item */}
+                              {/* Jabatan Penanggung Jawab */}
                               {pjJabatan && (
                                 <span className="text-xs bg-indigo-100 text-indigo-800 border border-indigo-300 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
                                   👔 PJ: {pjJabatan}
@@ -537,7 +541,7 @@
                             <h3 className="text-lg font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</h3>
                           </div>
 
-                          {/* Format Indikator Kolom T Rapi + Tampilan Jabatan Penanggung Jawab */}
+                          {/* Indikator & Panduan Penilaian */}
                           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
                             <div className="flex justify-between items-center border-b border-amber-200 pb-1">
                               <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
@@ -551,7 +555,6 @@
                               </button>
                             </div>
 
-                            {/* PENAMBAHAN FITUR 2: Banner Jabatan Penanggung Jawab di Keterangan Ceklis */}
                             {pjJabatan && (
                               <div className="bg-amber-100/80 p-2 rounded-lg text-xs font-bold text-amber-950 flex items-center gap-1.5 border border-amber-300">
                                 <span>👔</span>
@@ -691,7 +694,7 @@
                         const kode = String(c.Kode_Cabang || "").trim();
                         const nama = String(c.Nama_Cabang || "").trim();
                         return (
-                          <option key={i} value={kode}>
+                          <option key={i} value={nama}>
                             {kode ? `${kode} - ` : ""}{nama}
                           </option>
                         );
@@ -714,7 +717,7 @@
                 ) : dashboardData ? (() => {
                   const filteredSessions = selectedDashCabang === "ALL" 
                     ? (dashboardData.sessions || [])
-                    : (dashboardData.sessions || []).filter(s => String(s.Kode_Cabang).trim() === String(selectedDashCabang).trim());
+                    : (dashboardData.sessions || []).filter(s => String(s.Nama_Cabang || s.Kode_Cabang).trim() === String(selectedDashCabang).trim());
 
                   const sessionIds = filteredSessions.map(s => s.Session_ID);
                   const filteredResponses = (dashboardData.responses || []).filter(r => sessionIds.includes(r.Session_ID));
@@ -732,7 +735,6 @@
                   const existGoodCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Exist Good").length;
                   const existNotGoodCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Exist Not Good").length;
                   const notExistCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Exist").length;
-                  const notAvailCount = filteredResponses.filter(r => r.Hasil_Penilaian === "Not Available").length;
 
                   // Score Calculation
                   const scorePoints = filteredResponses.reduce((acc, resp) => {
@@ -810,19 +812,19 @@
                         <div className="border-b pb-3">
                           <h3 className="font-bold text-slate-800 text-base">📌 Outstanding: Checklist Belum Diisi</h3>
                           <p className="text-xs text-slate-500">
-                            Breakdown item belum diselesaikan per Section & PIC. Item prioritas disorot di posisi teratas.
+                            Breakdown item belum diselesaikan per Section & PIC.
                           </p>
                         </div>
 
                         {selectedDashCabang === "ALL" ? (
                           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-800">
-                            👉 <b>Silakan pilih cabang spesifik</b> pada filter di atas untuk melihat detail item outstanding beserta prioritasnya.
+                            👉 <b>Silakan pilih cabang spesifik</b> pada filter di atas untuk melihat detail item outstanding.
                           </div>
                         ) : (
                           <div className="space-y-3">
                             {SECTIONS.map((sec, i) => {
                               const secSession = (dashboardData.sessions || []).find(
-                                s => String(s.Kode_Cabang).trim() === String(selectedDashCabang).trim() && String(s.Section).trim() === String(sec).trim()
+                                s => String(s.Nama_Cabang || s.Kode_Cabang).trim() === String(selectedDashCabang).trim() && String(s.Section).trim() === String(sec).trim()
                               );
 
                               const picName = secSession && secSession.Nama_User ? secSession.Nama_User : "";
@@ -841,7 +843,6 @@
                                 ? [] 
                                 : sectionMasterItems.filter(m => !answeredIds.includes(m.ID_Checklist));
 
-                              // Urutkan item agar item bernilai PRIORITAS (P, GP, SGP) muncul di paling atas
                               const sortedUnfinishedItems = [...unfinishedItems].sort((a, b) => {
                                 const aPrio = isPriorityItem(a.Kelas_Badge) ? 1 : 0;
                                 const bPrio = isPriorityItem(b.Kelas_Badge) ? 1 : 0;
@@ -895,7 +896,6 @@
                                     </div>
                                   </div>
 
-                                  {/* Accordion Detail Outstanding Content */}
                                   {isExpanded && (
                                     <div className="p-3 bg-white border-t space-y-2">
                                       {sortedUnfinishedItems.length === 0 ? (
