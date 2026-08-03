@@ -26,7 +26,7 @@
       "H23 Premises", "H23 Process", "H23 People"
     ];
 
-    // Helper Priority Item (P, GP, SGP)
+    // Helper Priority Item
     const isPriorityItem = (badgeString) => {
       if (!badgeString) return false;
       const badges = String(badgeString).split(",").map(b => b.trim());
@@ -138,24 +138,34 @@
         });
       };
 
-      // Normalizer untuk Dashboard Data
+      // Normalizer untuk Dashboard Data dengan Fallback
       const processDashboardResponse = (raw) => {
-        if (!raw) return null;
-
         let branchesList = [];
-        let totalCabang = raw.totalCabang || raw.TotalCabang || raw.total_cabang || 0;
-        let avgScore = raw.avgScore || raw.AvgScore || raw.avg_score || 0;
-        let completedSections = raw.completedSections || raw.CompletedSections || raw.sectionSelesai || 0;
-        let overallGrade = raw.overallGrade || raw.OverallGrade || raw.grade || "N/A";
+        let totalCabang = 0;
+        let avgScore = 0;
+        let completedSections = 0;
+        let overallGrade = "N/A";
 
-        if (Array.isArray(raw)) {
-          branchesList = raw;
-        } else if (raw.branches && Array.isArray(raw.branches)) {
-          branchesList = raw.branches;
-        } else if (raw.Branches && Array.isArray(raw.Branches)) {
-          branchesList = raw.Branches;
-        } else if (raw.data && Array.isArray(raw.data)) {
-          branchesList = raw.data;
+        if (raw) {
+          totalCabang = raw.totalCabang || raw.TotalCabang || raw.total_cabang || 0;
+          avgScore = raw.avgScore || raw.AvgScore || raw.avg_score || 0;
+          completedSections = raw.completedSections || raw.CompletedSections || raw.sectionSelesai || 0;
+          overallGrade = raw.overallGrade || raw.OverallGrade || raw.grade || "N/A";
+
+          if (Array.isArray(raw)) branchesList = raw;
+          else if (raw.branches && Array.isArray(raw.branches)) branchesList = raw.branches;
+          else if (raw.Branches && Array.isArray(raw.Branches)) branchesList = raw.Branches;
+          else if (raw.data && Array.isArray(raw.data)) branchesList = raw.data;
+        }
+
+        // JIKA SERVER TIDAK MENGIRIMKAN DAFTAR CABANG, GUNAKAN MASTER CABANG
+        if (branchesList.length === 0 && masterCabang.length > 0) {
+          branchesList = masterCabang.map(c => ({
+            nama: c.Nama_Cabang || c.nama || "Cabang",
+            progress: 0,
+            score: 0,
+            grade: "N/A"
+          }));
         }
 
         const normalizedBranches = branchesList.map(b => {
@@ -176,8 +186,11 @@
 
         if (!totalCabang) totalCabang = normalizedBranches.length;
         if (!avgScore && normalizedBranches.length > 0) {
-          const totalScore = normalizedBranches.reduce((acc, curr) => acc + curr.score, 0);
-          avgScore = Math.round(totalScore / normalizedBranches.length);
+          const activeBranches = normalizedBranches.filter(b => b.score > 0);
+          if (activeBranches.length > 0) {
+            const totalScore = activeBranches.reduce((acc, curr) => acc + curr.score, 0);
+            avgScore = Math.round(totalScore / activeBranches.length);
+          }
         }
         if (overallGrade === "N/A" && avgScore > 0) {
           if (avgScore >= 85) overallGrade = "A";
@@ -198,38 +211,42 @@
       const loadDashboard = () => {
         setDashLoading(true);
 
-        // Coba GET terlebih dahulu
+        const applyData = (raw) => {
+          setDashboardData(processDashboardResponse(raw));
+          setDashLoading(false);
+        };
+
+        // 1. Coba via GET
         fetch(`${API_URL}?action=getDashboardData`)
           .then(res => res.json())
           .then(res => {
-            if (res.status === "success" && res.data) {
-              setDashboardData(processDashboardResponse(res.data));
-              setDashLoading(false);
+            if (res && res.status === "success" && res.data) {
+              applyData(res.data);
             } else {
-              fetchDashboardViaPost();
+              // 2. Coba via POST jika GET tidak merespon expected format
+              fetchDashboardViaPost(applyData);
             }
           })
           .catch(() => {
-            fetchDashboardViaPost();
+            fetchDashboardViaPost(applyData);
           });
       };
 
-      const fetchDashboardViaPost = () => {
+      const fetchDashboardViaPost = (callback) => {
         fetch(API_URL, {
           method: "POST",
           body: JSON.stringify({ action: "getDashboardData" })
         })
         .then(res => res.json())
         .then(res => {
-          if (res.status === "success" && res.data) {
-            setDashboardData(processDashboardResponse(res.data));
+          if (res && res.status === "success" && res.data) {
+            callback(res.data);
           } else {
-            setDashboardData(processDashboardResponse([]));
+            callback(null);
           }
-          setDashLoading(false);
         })
         .catch(() => {
-          setDashLoading(false);
+          callback(null);
         });
       };
 
@@ -391,7 +408,6 @@
         });
       };
 
-      // Fungsi Skip Item
       const handleSkipAnswer = () => {
         setSelectedRating("");
         setPhotoBase64("");
@@ -737,14 +753,12 @@
                             </div>
                           )}
 
-                          {/* DUA TOMBOL: SKIP DAN SIMPAN */}
                           <div className="flex gap-2 pt-2">
                             <button 
                               type="button"
                               disabled={saving}
                               onClick={handleSkipAnswer}
                               className="w-1/3 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-3.5 rounded-xl transition text-xs md:text-sm flex items-center justify-center gap-1 border border-amber-200"
-                              title="Lewati item ini terlebih dahulu"
                             >
                               <span>⏭️</span> Skip
                             </button>
@@ -813,20 +827,6 @@
                         setSelectedRating("");
                         setPhotoBase64("");
                         setStep(2);
-                        if (selectedCabang) {
-                          const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === String(selectedCabang).trim());
-                          const cleanKode = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : selectedCabang;
-                          fetch(API_URL, {
-                            method: "POST",
-                            body: JSON.stringify({ action: "getBranchStatus", kodeCabang: cleanKode })
-                          })
-                          .then(res => res.json())
-                          .then(res => {
-                            if (res.status === "success") {
-                              setLockedSections(res.data || {});
-                            }
-                          });
-                        }
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-md w-full"
                     >
@@ -847,6 +847,13 @@
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button 
+                      onClick={loadDashboard}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 border"
+                    >
+                      🔄 Reload
+                    </button>
+
                     <label className="text-xs font-bold text-slate-600">Filter Cabang:</label>
                     <select
                       value={selectedDashCabang}
@@ -892,7 +899,13 @@
                     </div>
 
                     <div className="bg-white border rounded-2xl p-4 shadow-xs space-y-4">
-                      <h3 className="font-bold text-slate-800 text-sm">Detail Pencapaian Cabang</h3>
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-slate-800 text-sm">Detail Pencapaian Cabang</h3>
+                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded border">
+                          Total: {dashboardData.branches ? dashboardData.branches.length : 0} Cabang
+                        </span>
+                      </div>
+
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs text-slate-700">
                           <thead className="bg-slate-100 text-slate-600 uppercase text-[10px]">
@@ -916,9 +929,10 @@
                                       b.grade === 'A' ? 'bg-emerald-100 text-emerald-800' :
                                       b.grade === 'B' ? 'bg-blue-100 text-blue-800' :
                                       b.grade === 'C' ? 'bg-amber-100 text-amber-800' :
-                                      'bg-rose-100 text-rose-800'
+                                      b.grade === 'D' ? 'bg-rose-100 text-rose-800' :
+                                      'bg-slate-100 text-slate-600'
                                     }`}>
-                                      Grade {b.grade}
+                                      {b.grade === "N/A" ? "N/A" : `Grade ${b.grade}`}
                                     </span>
                                   </td>
                                 </tr>
@@ -936,7 +950,6 @@
       );
     }
 
-    // Render React 18 Root
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
