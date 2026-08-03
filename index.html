@@ -26,13 +26,6 @@
       "H23 Premises", "H23 Process", "H23 People"
     ];
 
-    // Helper check badge spesifik
-    const hasBadge = (badgeString, targetBadge) => {
-      if (!badgeString) return false;
-      const badges = String(badgeString).split(",").map(b => b.trim());
-      return badges.includes(targetBadge);
-    };
-
     // Helper Priority Item (P, GP, SGP)
     const isPriorityItem = (badgeString) => {
       if (!badgeString) return false;
@@ -145,20 +138,99 @@
         });
       };
 
+      // Normalizer untuk Dashboard Data
+      const processDashboardResponse = (raw) => {
+        if (!raw) return null;
+
+        let branchesList = [];
+        let totalCabang = raw.totalCabang || raw.TotalCabang || raw.total_cabang || 0;
+        let avgScore = raw.avgScore || raw.AvgScore || raw.avg_score || 0;
+        let completedSections = raw.completedSections || raw.CompletedSections || raw.sectionSelesai || 0;
+        let overallGrade = raw.overallGrade || raw.OverallGrade || raw.grade || "N/A";
+
+        if (Array.isArray(raw)) {
+          branchesList = raw;
+        } else if (raw.branches && Array.isArray(raw.branches)) {
+          branchesList = raw.branches;
+        } else if (raw.Branches && Array.isArray(raw.Branches)) {
+          branchesList = raw.Branches;
+        } else if (raw.data && Array.isArray(raw.data)) {
+          branchesList = raw.data;
+        }
+
+        const normalizedBranches = branchesList.map(b => {
+          const nama = b.nama || b.Nama || b.Nama_Cabang || b.namaCabang || b.cabang || "Cabang";
+          const progress = Number(b.progress || b.Progress || b.progressPercent || 0);
+          const score = Number(b.score || b.Score || b.nilai || 0);
+          let grade = b.grade || b.Grade || "N/A";
+
+          if (grade === "N/A" && score > 0) {
+            if (score >= 85) grade = "A";
+            else if (score >= 70) grade = "B";
+            else if (score >= 50) grade = "C";
+            else grade = "D";
+          }
+
+          return { nama, progress, score, grade };
+        });
+
+        if (!totalCabang) totalCabang = normalizedBranches.length;
+        if (!avgScore && normalizedBranches.length > 0) {
+          const totalScore = normalizedBranches.reduce((acc, curr) => acc + curr.score, 0);
+          avgScore = Math.round(totalScore / normalizedBranches.length);
+        }
+        if (overallGrade === "N/A" && avgScore > 0) {
+          if (avgScore >= 85) overallGrade = "A";
+          else if (avgScore >= 70) overallGrade = "B";
+          else if (avgScore >= 50) overallGrade = "C";
+          else overallGrade = "D";
+        }
+
+        return {
+          totalCabang,
+          avgScore,
+          completedSections,
+          overallGrade,
+          branches: normalizedBranches
+        };
+      };
+
       const loadDashboard = () => {
         setDashLoading(true);
+
+        // Coba GET terlebih dahulu
+        fetch(`${API_URL}?action=getDashboardData`)
+          .then(res => res.json())
+          .then(res => {
+            if (res.status === "success" && res.data) {
+              setDashboardData(processDashboardResponse(res.data));
+              setDashLoading(false);
+            } else {
+              fetchDashboardViaPost();
+            }
+          })
+          .catch(() => {
+            fetchDashboardViaPost();
+          });
+      };
+
+      const fetchDashboardViaPost = () => {
         fetch(API_URL, {
           method: "POST",
           body: JSON.stringify({ action: "getDashboardData" })
         })
         .then(res => res.json())
         .then(res => {
-          if (res.status === "success") {
-            setDashboardData(res.data);
+          if (res.status === "success" && res.data) {
+            setDashboardData(processDashboardResponse(res.data));
+          } else {
+            setDashboardData(processDashboardResponse([]));
           }
           setDashLoading(false);
         })
-        .catch(() => setDashLoading(false));
+        .catch(() => {
+          setDashLoading(false);
+        });
       };
 
       const handleSwitchMode = (mode) => {
