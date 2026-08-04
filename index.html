@@ -6,205 +6,97 @@
   <title>Monitoring NOS Cabang</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <style>
-    .badge-base {
-      padding: 0.5rem 1.25rem;
-      font-size: 0.95rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      text-transform: uppercase;
-      transition: transform 0.2s ease;
-    }
-    .badge-base:hover { transform: translateY(-2px) scale(1.03); }
-    .badge-platinum {
-      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-      color: #00f2fe; border: 2px solid #4facfe; box-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
-    }
-    .badge-gold {
-      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #AA771C 100%);
-      color: #3b2003; border: 2px solid #ffe082; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.7);
-    }
-    .badge-silver {
-      background: linear-gradient(135deg, #8A95A5 0%, #CFD6DF 50%, #B0B7C3 100%);
-      color: #1a202c; border: 2px solid #ffffff; box-shadow: 0 4px 12px rgba(160, 174, 192, 0.6);
-    }
-    .badge-bronze {
-      background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%);
-      color: #ffffff; border: 2px solid #ffcc80; box-shadow: 0 4px 12px rgba(160, 82, 45, 0.6);
-    }
+    .badge-base { padding: 0.5rem 1.25rem; font-size: 0.95rem; font-weight: 900; letter-spacing: 0.08em; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; }
+    .badge-bronze { background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%); color: #ffffff; border: 2px solid #ffcc80; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-  <!-- BANNER ALERT STATUS KONEKSI DATABASE -->
   <div id="apiStatusBanner" class="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
     <span id="apiStatusText">⏳ Menghubungkan ke Google Sheets API...</span>
     <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Coba Lagi</button>
   </div>
 
-  <!-- NAVBAR HEADER -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-xl font-bold flex items-center gap-2">
         <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
       </h1>
-      <div class="flex gap-2">
-        <button onclick="switchTab('ceklis')" id="btn-ceklis" class="px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white">
-          <i class="fa-solid fa-clipboard-check mr-1"></i> Form Ceklis
-        </button>
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow">
-          <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard & Grade
-        </button>
-      </div>
+      <button onclick="loadAllData()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-sm font-bold flex items-center gap-1">
+        <i class="fa-solid fa-rotate"></i> Refresh Data
+      </button>
     </div>
   </header>
 
-  <!-- KONTEN UTAMA -->
   <main class="max-w-7xl mx-auto px-4 py-6">
-
-    <!-- VIEW 1: FORM CEKLIS -->
-    <section id="ceklisView" class="hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-blue-600"></i> Setup Sesi Audit NOS Cabang
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilih Cabang:</label>
-            <select id="selectCabangCeklis" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-medium">
-              <option value="">-- Memuat Cabang... --</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nama User / Auditor:</label>
-            <input type="text" id="inputNamaUser" placeholder="Masukkan Nama Anda" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Jabatan:</label>
-            <input type="text" id="inputJabatan" placeholder="Contoh: Supervisor / Auditor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Sub-Panel NOS:</label>
-            <select id="selectSectionCeklis" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-semibold">
-              <option value="">-- Pilih Panel --</option>
-              <option value="H1 Premises">🏢 H1 Premises</option>
-              <option value="H1 Process">⚙️ H1 Process</option>
-              <option value="H2 People">👥 H2 People</option>
-              <option value="H23 Premises">🏢 H23 Premises</option>
-              <option value="H23 Process">⚙️ H23 Process</option>
-              <option value="H23 People">👥 H23 People</option>
-            </select>
-          </div>
-        </div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">📊 Dashboard Monitoring NOS Cabang</h2>
+        <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
       </div>
-    </section>
+      <div>
+        <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
+        <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold">
+          <option value="ALL">Semua Cabang</option>
+        </select>
+      </div>
+    </div>
 
-    <!-- VIEW 2: DASHBOARD & GRADE -->
-    <section id="dashboardView" class="block">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            📊 Dashboard Monitoring NOS Cabang
-          </h2>
-          <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <button onclick="loadAllData()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm text-slate-700 transition flex items-center gap-1 font-semibold">
-            <i class="fa-solid fa-rotate"></i> Refresh
-          </button>
-          
-          <div>
-            <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Grade:</label>
-            <select id="filterGrade" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold">
-              <option value="ALL">Semua Grade</option>
-              <option value="PLATINUM">💎 Platinum</option>
-              <option value="GOLD">🥇 Gold</option>
-              <option value="SILVER">🥈 Silver</option>
-              <option value="BRONZE">🥉 Bronze</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
-            <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold">
-              <option value="ALL">Semua Cabang</option>
-            </select>
-          </div>
-        </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <h3 class="font-bold text-slate-700 text-base">Detail Pencapaian Cabang</h3>
+        <span id="branchCountBadge" class="text-xs bg-slate-200 text-slate-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
       </div>
 
-      <!-- CARDS SUMMARY -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpiContainer"></div>
-
-      <!-- TABEL DETAIL -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 class="font-bold text-slate-700 text-base">Detail Pencapaian Cabang</h3>
-          <span id="branchCountBadge" class="text-xs bg-slate-200 text-slate-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider">
-              <tr>
-                <th class="py-4 px-5">Cabang</th>
-                <th class="py-4 px-5">Progress Overall</th>
-                <th class="py-4 px-5">Compliance Score</th>
-                <th class="py-4 px-5 text-center">Grade Final Cabang</th>
-              </tr>
-            </thead>
-            <tbody id="branchTableBody" class="divide-y divide-slate-100">
-              <tr>
-                <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data dari server...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider">
+            <tr>
+              <th class="py-4 px-5">Cabang</th>
+              <th class="py-4 px-5">Progress Overall</th>
+              <th class="py-4 px-5">Compliance Score</th>
+              <th class="py-4 px-5 text-center">Grade Final Cabang</th>
+            </tr>
+          </thead>
+          <tbody id="branchTableBody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data dari server...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </section>
-
+    </div>
   </main>
 
   <script>
-    // URL Web App Google Apps Script Milik Kakak
     const API_URL = "https://script.google.com/macros/s/AKfycbxTF1np0v9Cv004nioMGRsRHtmH8vWY8PUBx2IzZUbVPD0WXuIONOMK5ErgV1aKENkcZg/exec";
 
     let masterBranches = [];
-    let masterChecklist = [];
     let branchDataList = [];
 
-    function switchTab(tab) {
-      if (tab === "ceklis") {
-        document.getElementById("ceklisView").classList.remove("hidden");
-        document.getElementById("dashboardView").classList.add("hidden");
-        document.getElementById("btn-ceklis").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
-        document.getElementById("btn-dashboard").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white";
-      } else {
-        document.getElementById("ceklisView").classList.add("hidden");
-        document.getElementById("dashboardView").classList.remove("hidden");
-        document.getElementById("btn-dashboard").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
-        document.getElementById("btn-ceklis").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white";
-      }
-    }
+    // FUNGSI JSONP UNTUK MEMANGGIL API TANPA BLOKIR CORS
+    function fetchJSONP(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+        
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
 
-    function showStatusBanner(msg, isError = false) {
-      const banner = document.getElementById("apiStatusBanner");
-      const text = document.getElementById("apiStatusText");
-      if (!banner || !text) return;
-      banner.classList.remove("hidden", "bg-amber-500", "bg-red-600", "bg-emerald-600");
-      banner.classList.add(isError ? "bg-red-600" : "bg-emerald-600");
-      text.textContent = msg;
-      if (!isError) setTimeout(() => banner.classList.add("hidden"), 4000);
+        const script = document.createElement('script');
+        const separator = url.includes('?') ? '&' : '?';
+        script.src = url + separator + 'callback=' + callbackName;
+        script.onerror = function() {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('Gagal terhubung ke Google Script (JSONP Error)'));
+        };
+        
+        document.body.appendChild(script);
+      });
     }
 
     async function loadAllData() {
@@ -217,32 +109,17 @@
       }
 
       try {
-        // Pemanggilan data dengan opsi redirect follow untuk Apps Script
-        const response = await fetch(API_URL, {
-          method: "GET",
-          redirect: "follow"
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP Error Status: ${response.status}`);
-        }
-
-        const json = await response.json();
-        console.log("Data diterima:", json);
-
+        const json = await fetchJSONP(API_URL);
+        
         if (json.status === "error") {
-          throw new Error(json.message || "Error dari server Apps Script");
+          throw new Error(json.message || "Error dari server");
         }
 
-        // Parse Ekstraksi Cabang
-        const rawCabang = json.masterCabang || json.branches || [];
-        masterBranches = rawCabang.map(item => {
-          if (typeof item === "string") return { nama: item, kode: item };
-          return {
-            nama: item.Nama_Cabang || item.namaCabang || item.nama || item.Kode_Cabang || "Cabang Tanpa Nama",
-            kode: item.Kode_Cabang || item.kodeCabang || item.kode || item.Nama_Cabang || ""
-          };
-        });
+        const rawCabang = json.masterCabang || [];
+        masterBranches = rawCabang.map(item => ({
+          nama: item.Nama_Cabang || item.Kode_Cabang || "Cabang",
+          kode: item.Kode_Cabang || ""
+        }));
 
         branchDataList = json.branches || masterBranches.map(b => ({
           nama: b.nama,
@@ -254,17 +131,27 @@
 
         populateDropdowns();
         renderDashboard();
-        showStatusBanner("✅ Data Berhasil Dimuat!", false);
+
+        if (banner) {
+          banner.classList.remove("bg-amber-500");
+          banner.classList.add("bg-emerald-600");
+          text.textContent = "✅ Data Berhasil Dimuat!";
+          setTimeout(() => banner.classList.add("hidden"), 3000);
+        }
 
       } catch (err) {
-        console.error("API Fetch Error:", err);
-        showStatusBanner("❌ Gagal Mengambil Data: " + err.message, true);
-        
+        console.error("API Error:", err);
+        if (banner) {
+          banner.classList.remove("bg-amber-500");
+          banner.classList.add("bg-red-600");
+          text.textContent = "❌ " + err.message;
+        }
+
         document.getElementById("branchTableBody").innerHTML = `
           <tr>
             <td colspan="4" class="py-8 text-center text-red-500 font-bold">
               ❌ Gagal terhubung ke Google Sheets API.<br>
-              <span class="text-xs font-normal text-slate-500">Pesan Error: ${err.message}</span>
+              <span class="text-xs font-normal text-slate-500">${err.message}</span>
             </td>
           </tr>
         `;
@@ -272,74 +159,26 @@
     }
 
     function populateDropdowns() {
-      const selectCeklis = document.getElementById("selectCabangCeklis");
       const selectDash = document.getElementById("filterCabang");
-
-      if (selectCeklis) selectCeklis.innerHTML = '<option value="">-- Pilih Cabang --</option>';
-      if (selectDash) selectDash.innerHTML = '<option value="ALL">Semua Cabang</option>';
+      if (!selectDash) return;
+      selectDash.innerHTML = '<option value="ALL">Semua Cabang</option>';
 
       masterBranches.forEach(b => {
-        if (selectCeklis) {
-          const opt1 = document.createElement("option");
-          opt1.value = b.kode;
-          opt1.textContent = `${b.nama} (${b.kode})`;
-          selectCeklis.appendChild(opt1);
-        }
-
-        if (selectDash) {
-          const opt2 = document.createElement("option");
-          opt2.value = b.nama;
-          opt2.textContent = b.nama;
-          selectDash.appendChild(opt2);
-        }
+        const opt = document.createElement("option");
+        opt.value = b.nama;
+        opt.textContent = b.nama;
+        selectDash.appendChild(opt);
       });
-    }
-
-    function getGradeBadgeHTML(grade) {
-      const g = (grade || "BRONZE").toUpperCase();
-      if (g === "PLATINUM") return `<span class="badge-base badge-platinum"><i class="fa-solid fa-gem"></i> PLATINUM</span>`;
-      if (g === "GOLD") return `<span class="badge-base badge-gold"><i class="fa-solid fa-crown"></i> GOLD</span>`;
-      if (g === "SILVER") return `<span class="badge-base badge-silver"><i class="fa-solid fa-medal"></i> SILVER</span>`;
-      return `<span class="badge-base badge-bronze"><i class="fa-solid fa-award"></i> BRONZE</span>`;
     }
 
     function renderDashboard() {
       const selectedCabang = document.getElementById("filterCabang") ? document.getElementById("filterCabang").value : "ALL";
-      const selectedGrade = document.getElementById("filterGrade") ? document.getElementById("filterGrade").value : "ALL";
-
       let filtered = [...branchDataList];
 
       if (selectedCabang !== "ALL") {
         filtered = filtered.filter(b => b.nama === selectedCabang);
       }
-      if (selectedGrade !== "ALL") {
-        filtered = filtered.filter(b => b.grade.toUpperCase() === selectedGrade);
-      }
 
-      // Render KPI Cards
-      const kpiContainer = document.getElementById("kpiContainer");
-      if (kpiContainer) {
-        kpiContainer.innerHTML = `
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang Monitoring</span>
-            <div class="text-3xl font-extrabold text-slate-800 mt-2">${masterBranches.length}</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-emerald-600 uppercase">Rata-rata Compliance</span>
-            <div class="text-3xl font-extrabold text-emerald-600 mt-2">0%</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-amber-600 uppercase">Total Panel Selesai</span>
-            <div class="text-3xl font-extrabold text-amber-600 mt-2">0</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-purple-600 uppercase">Cabang Terfilter</span>
-            <div class="text-3xl font-extrabold text-purple-600 mt-2">${filtered.length}</div>
-          </div>
-        `;
-      }
-
-      // Render Tabel
       const tbody = document.getElementById("branchTableBody");
       const badge = document.getElementById("branchCountBadge");
       if (badge) badge.textContent = `Total: ${filtered.length} Cabang`;
@@ -366,7 +205,7 @@
             </div>
           </td>
           <td class="py-4 px-5 font-bold text-slate-800 text-base">${b.score}%</td>
-          <td class="py-4 px-5 text-center">${getGradeBadgeHTML(b.grade)}</td>
+          <td class="py-4 px-5 text-center"><span class="badge-base badge-bronze"><i class="fa-solid fa-award"></i> BRONZE</span></td>
         `;
         tbody.appendChild(tr);
       });
