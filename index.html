@@ -14,7 +14,7 @@
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
   <div id="apiStatusBanner" class="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
-    <span id="apiStatusText">⏳ Menghubungkan ke Google Sheets API...</span>
+    <span id="apiStatusText">⏳ Menghubungkan ke Google Sheets...</span>
     <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Coba Lagi</button>
   </div>
 
@@ -61,7 +61,7 @@
           </thead>
           <tbody id="branchTableBody" class="divide-y divide-slate-100">
             <tr>
-              <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data dari server...</td>
+              <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data langsung dari Google Sheets...</td>
             </tr>
           </tbody>
         </table>
@@ -70,33 +70,21 @@
   </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxTF1np0v9Cv004nioMGRsRHtmH8vWY8PUBx2IzZUbVPD0WXuIONOMK5ErgV1aKENkcZg/exec";
+    // ID SpreadSheet Google Sheets
+    const SPREADSHEET_ID = "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
 
     let masterBranches = [];
     let branchDataList = [];
 
-    // FUNGSI JSONP UNTUK MEMANGGIL API TANPA BLOKIR CORS
-    function fetchJSONP(url) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-        
-        window[callbackName] = function(data) {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          resolve(data);
-        };
-
-        const script = document.createElement('script');
-        const separator = url.includes('?') ? '&' : '?';
-        script.src = url + separator + 'callback=' + callbackName;
-        script.onerror = function() {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          reject(new Error('Gagal terhubung ke Google Script (JSONP Error)'));
-        };
-        
-        document.body.appendChild(script);
-      });
+    function showStatusBanner(msg, isError = false) {
+      const banner = document.getElementById("apiStatusBanner");
+      const text = document.getElementById("apiStatusText");
+      if (!banner || !text) return;
+      banner.classList.remove("hidden", "bg-amber-500", "bg-red-600", "bg-emerald-600");
+      banner.classList.add(isError ? "bg-red-600" : "bg-emerald-600");
+      text.textContent = msg;
+      if (!isError) setTimeout(() => banner.classList.add("hidden"), 3000);
     }
 
     async function loadAllData() {
@@ -105,23 +93,36 @@
       if (banner && text) {
         banner.classList.remove("hidden", "bg-red-600", "bg-emerald-600");
         banner.classList.add("bg-amber-500");
-        text.textContent = "⏳ Menghubungkan ke Google Sheets API...";
+        text.textContent = "⏳ Membaca data langsung dari Google Sheets...";
       }
 
       try {
-        const json = await fetchJSONP(API_URL);
+        const response = await fetch(GVIZ_URL);
+        if (!response.ok) throw new Error("Gagal mengambil data. Pastikan Google Sheets sudah diset 'Anyone with the link'.");
+
+        const responseText = await response.text();
         
-        if (json.status === "error") {
-          throw new Error(json.message || "Error dari server");
+        // Ekstraksi data JSON dari format Google Visualization
+        const jsonMatch = responseText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/);
+        if (!jsonMatch || !jsonMatch[1]) {
+          throw new Error("Gagal memproses struktur data Google Sheets.");
         }
 
-        const rawCabang = json.masterCabang || [];
-        masterBranches = rawCabang.map(item => ({
-          nama: item.Nama_Cabang || item.Kode_Cabang || "Cabang",
-          kode: item.Kode_Cabang || ""
-        }));
+        const data = JSON.parse(jsonMatch[1]);
+        if (!data.table || !data.table.rows) {
+          throw new Error("Data Google Sheets kosong.");
+        }
 
-        branchDataList = json.branches || masterBranches.map(b => ({
+        // Ambil baris data cabang
+        masterBranches = data.table.rows
+          .map(row => {
+            const cellKode = row.c && row.c[0] ? String(row.c[0].v || "").trim() : "";
+            const cellNama = row.c && row.c[1] ? String(row.c[1].v || "").trim() : cellKode;
+            return { kode: cellKode, nama: cellNama || cellKode };
+          })
+          .filter(b => b.kode !== "" && b.kode.toLowerCase() !== "kode_cabang" && b.kode.toLowerCase() !== "kode");
+
+        branchDataList = masterBranches.map(b => ({
           nama: b.nama,
           kode: b.kode,
           progress: 0,
@@ -131,26 +132,16 @@
 
         populateDropdowns();
         renderDashboard();
-
-        if (banner) {
-          banner.classList.remove("bg-amber-500");
-          banner.classList.add("bg-emerald-600");
-          text.textContent = "✅ Data Berhasil Dimuat!";
-          setTimeout(() => banner.classList.add("hidden"), 3000);
-        }
+        showStatusBanner("✅ Data Berhasil Dimuat!", false);
 
       } catch (err) {
-        console.error("API Error:", err);
-        if (banner) {
-          banner.classList.remove("bg-amber-500");
-          banner.classList.add("bg-red-600");
-          text.textContent = "❌ " + err.message;
-        }
+        console.error("Fetch Error:", err);
+        showStatusBanner("❌ " + err.message, true);
 
         document.getElementById("branchTableBody").innerHTML = `
           <tr>
             <td colspan="4" class="py-8 text-center text-red-500 font-bold">
-              ❌ Gagal terhubung ke Google Sheets API.<br>
+              ❌ Gagal terhubung ke Google Sheets.<br>
               <span class="text-xs font-normal text-slate-500">${err.message}</span>
             </td>
           </tr>
@@ -166,7 +157,7 @@
       masterBranches.forEach(b => {
         const opt = document.createElement("option");
         opt.value = b.nama;
-        opt.textContent = b.nama;
+        opt.textContent = `${b.nama} (${b.kode})`;
         selectDash.appendChild(opt);
       });
     }
