@@ -105,16 +105,6 @@
             </select>
           </div>
         </div>
-
-        <div class="mt-5 flex justify-end pt-3 border-t">
-          <button onclick="startSession()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow flex items-center gap-2">
-            <i class="fa-solid fa-play"></i> Mulai Audit
-          </button>
-        </div>
-      </div>
-
-      <div id="checklistWorkArea" class="hidden">
-        <div id="checklistItemsContainer" class="space-y-4"></div>
       </div>
     </section>
 
@@ -186,6 +176,7 @@
   </main>
 
   <script>
+    // URL Web App Google Apps Script Milik Kakak
     const API_URL = "https://script.google.com/macros/s/AKfycbxTF1np0v9Cv004nioMGRsRHtmH8vWY8PUBx2IzZUbVPD0WXuIONOMK5ErgV1aKENkcZg/exec";
 
     let masterBranches = [];
@@ -209,6 +200,7 @@
     function showStatusBanner(msg, isError = false) {
       const banner = document.getElementById("apiStatusBanner");
       const text = document.getElementById("apiStatusText");
+      if (!banner || !text) return;
       banner.classList.remove("hidden", "bg-amber-500", "bg-red-600", "bg-emerald-600");
       banner.classList.add(isError ? "bg-red-600" : "bg-emerald-600");
       text.textContent = msg;
@@ -218,18 +210,32 @@
     async function loadAllData() {
       const banner = document.getElementById("apiStatusBanner");
       const text = document.getElementById("apiStatusText");
-      banner.classList.remove("hidden", "bg-red-600", "bg-emerald-600");
-      banner.classList.add("bg-amber-500");
-      text.textContent = "⏳ Menghubungkan ke Google Sheets API...";
+      if (banner && text) {
+        banner.classList.remove("hidden", "bg-red-600", "bg-emerald-600");
+        banner.classList.add("bg-amber-500");
+        text.textContent = "⏳ Menghubungkan ke Google Sheets API...";
+      }
 
       try {
-        const response = await fetch(`${API_URL}?action=getInitialData`);
-        const json = await response.json();
+        // Pemanggilan data dengan opsi redirect follow untuk Apps Script
+        const response = await fetch(API_URL, {
+          method: "GET",
+          redirect: "follow"
+        });
 
+        if (!response.ok) {
+          throw new Error(`HTTP Error Status: ${response.status}`);
+        }
+
+        const json = await response.json();
         console.log("Data diterima:", json);
 
+        if (json.status === "error") {
+          throw new Error(json.message || "Error dari server Apps Script");
+        }
+
         // Parse Ekstraksi Cabang
-        const rawCabang = json.masterCabang || json.branches || json.data || [];
+        const rawCabang = json.masterCabang || json.branches || [];
         masterBranches = rawCabang.map(item => {
           if (typeof item === "string") return { nama: item, kode: item };
           return {
@@ -252,13 +258,13 @@
 
       } catch (err) {
         console.error("API Fetch Error:", err);
-        showStatusBanner("❌ Gagal Mengambil Data: " + err.message + ". Pastikan Google Script di-deploy dengan akses 'Anyone'.", true);
+        showStatusBanner("❌ Gagal Mengambil Data: " + err.message, true);
         
         document.getElementById("branchTableBody").innerHTML = `
           <tr>
             <td colspan="4" class="py-8 text-center text-red-500 font-bold">
               ❌ Gagal terhubung ke Google Sheets API.<br>
-              <span class="text-xs font-normal text-slate-500">Pastikan 'Who has access' di Google Apps Script disetting ke 'Anyone'.</span>
+              <span class="text-xs font-normal text-slate-500">Pesan Error: ${err.message}</span>
             </td>
           </tr>
         `;
@@ -269,19 +275,23 @@
       const selectCeklis = document.getElementById("selectCabangCeklis");
       const selectDash = document.getElementById("filterCabang");
 
-      selectCeklis.innerHTML = '<option value="">-- Pilih Cabang --</option>';
-      selectDash.innerHTML = '<option value="ALL">Semua Cabang</option>';
+      if (selectCeklis) selectCeklis.innerHTML = '<option value="">-- Pilih Cabang --</option>';
+      if (selectDash) selectDash.innerHTML = '<option value="ALL">Semua Cabang</option>';
 
       masterBranches.forEach(b => {
-        const opt1 = document.createElement("option");
-        opt1.value = b.kode;
-        opt1.textContent = `${b.nama} (${b.kode})`;
-        selectCeklis.appendChild(opt1);
+        if (selectCeklis) {
+          const opt1 = document.createElement("option");
+          opt1.value = b.kode;
+          opt1.textContent = `${b.nama} (${b.kode})`;
+          selectCeklis.appendChild(opt1);
+        }
 
-        const opt2 = document.createElement("option");
-        opt2.value = b.nama;
-        opt2.textContent = b.nama;
-        selectDash.appendChild(opt2);
+        if (selectDash) {
+          const opt2 = document.createElement("option");
+          opt2.value = b.nama;
+          opt2.textContent = b.nama;
+          selectDash.appendChild(opt2);
+        }
       });
     }
 
@@ -294,8 +304,8 @@
     }
 
     function renderDashboard() {
-      const selectedCabang = document.getElementById("filterCabang").value;
-      const selectedGrade = document.getElementById("filterGrade").value;
+      const selectedCabang = document.getElementById("filterCabang") ? document.getElementById("filterCabang").value : "ALL";
+      const selectedGrade = document.getElementById("filterGrade") ? document.getElementById("filterGrade").value : "ALL";
 
       let filtered = [...branchDataList];
 
@@ -306,34 +316,39 @@
         filtered = filtered.filter(b => b.grade.toUpperCase() === selectedGrade);
       }
 
-      // Render KPI
+      // Render KPI Cards
       const kpiContainer = document.getElementById("kpiContainer");
-      kpiContainer.innerHTML = `
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang Monitoring</span>
-          <div class="text-3xl font-extrabold text-slate-800 mt-2">${masterBranches.length}</div>
-        </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span class="text-xs font-bold text-emerald-600 uppercase">Rata-rata Compliance</span>
-          <div class="text-3xl font-extrabold text-emerald-600 mt-2">0%</div>
-        </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span class="text-xs font-bold text-amber-600 uppercase">Total Panel Selesai</span>
-          <div class="text-3xl font-extrabold text-amber-600 mt-2">0</div>
-        </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span class="text-xs font-bold text-purple-600 uppercase">Cabang Terfilter</span>
-          <div class="text-3xl font-extrabold text-purple-600 mt-2">${filtered.length}</div>
-        </div>
-      `;
+      if (kpiContainer) {
+        kpiContainer.innerHTML = `
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang Monitoring</span>
+            <div class="text-3xl font-extrabold text-slate-800 mt-2">${masterBranches.length}</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-emerald-600 uppercase">Rata-rata Compliance</span>
+            <div class="text-3xl font-extrabold text-emerald-600 mt-2">0%</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-amber-600 uppercase">Total Panel Selesai</span>
+            <div class="text-3xl font-extrabold text-amber-600 mt-2">0</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-purple-600 uppercase">Cabang Terfilter</span>
+            <div class="text-3xl font-extrabold text-purple-600 mt-2">${filtered.length}</div>
+          </div>
+        `;
+      }
 
       // Render Tabel
       const tbody = document.getElementById("branchTableBody");
-      document.getElementById("branchCountBadge").textContent = `Total: ${filtered.length} Cabang`;
+      const badge = document.getElementById("branchCountBadge");
+      if (badge) badge.textContent = `Total: ${filtered.length} Cabang`;
+      if (!tbody) return;
+
       tbody.innerHTML = "";
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Tidak ada cabang ditemukan.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Tidak ada data cabang ditemukan.</td></tr>`;
         return;
       }
 
