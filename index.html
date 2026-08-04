@@ -4,13 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitoring NOS Cabang</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
-    /* STYLING BADGE GRADE GLOWING */
     .badge-base {
       padding: 0.5rem 1.25rem;
       font-size: 0.95rem;
@@ -21,39 +18,34 @@
       align-items: center;
       gap: 0.5rem;
       text-transform: uppercase;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease;
     }
-    .badge-base:hover {
-      transform: translateY(-2px) scale(1.03);
-    }
+    .badge-base:hover { transform: translateY(-2px) scale(1.03); }
     .badge-platinum {
       background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-      color: #00f2fe;
-      border: 2px solid #4facfe;
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
-      text-shadow: 0 0 8px rgba(0, 242, 254, 0.8);
+      color: #00f2fe; border: 2px solid #4facfe; box-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
     }
     .badge-gold {
-      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
-      color: #3b2003;
-      border: 2px solid #ffe082;
-      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.7);
+      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #AA771C 100%);
+      color: #3b2003; border: 2px solid #ffe082; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.7);
     }
     .badge-silver {
-      background: linear-gradient(135deg, #8A95A5 0%, #CFD6DF 40%, #FFFFFF 60%, #B0B7C3 100%);
-      color: #1a202c;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 12px rgba(160, 174, 192, 0.6);
+      background: linear-gradient(135deg, #8A95A5 0%, #CFD6DF 50%, #B0B7C3 100%);
+      color: #1a202c; border: 2px solid #ffffff; box-shadow: 0 4px 12px rgba(160, 174, 192, 0.6);
     }
     .badge-bronze {
       background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%);
-      color: #ffffff;
-      border: 2px solid #ffcc80;
-      box-shadow: 0 4px 12px rgba(160, 82, 45, 0.6);
+      color: #ffffff; border: 2px solid #ffcc80; box-shadow: 0 4px 12px rgba(160, 82, 45, 0.6);
     }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+  <!-- BANNER ALERT STATUS KONEKSI DATABASE -->
+  <div id="apiStatusBanner" class="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
+    <span id="apiStatusText">⏳ Menghubungkan ke Google Sheets API...</span>
+    <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Coba Lagi</button>
+  </div>
 
   <!-- NAVBAR HEADER -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
@@ -62,10 +54,10 @@
         <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
       </h1>
       <div class="flex gap-2">
-        <button onclick="switchTab('ceklis')" id="btn-ceklis" class="px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow">
+        <button onclick="switchTab('ceklis')" id="btn-ceklis" class="px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white">
           <i class="fa-solid fa-clipboard-check mr-1"></i> Form Ceklis
         </button>
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg text-sm font-medium transition bg-blue-700 hover:bg-blue-800 text-white">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow">
           <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard & Grade
         </button>
       </div>
@@ -75,11 +67,8 @@
   <!-- KONTEN UTAMA -->
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- ==========================================
-         VIEW 1: FORM CEKLIS AUDIT
-         ========================================== -->
-    <section id="ceklisView" class="block">
-      <!-- PANEL SETUP AUDIT -->
+    <!-- VIEW 1: FORM CEKLIS -->
+    <section id="ceklisView" class="hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
         <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
           <i class="fa-solid fa-sliders text-blue-600"></i> Setup Sesi Audit NOS Cabang
@@ -88,7 +77,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilih Cabang:</label>
-            <select id="selectCabangCeklis" onchange="checkBranchStatus()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-medium">
+            <select id="selectCabangCeklis" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-medium">
               <option value="">-- Memuat Cabang... --</option>
             </select>
           </div>
@@ -104,7 +93,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilih Sub-Panel NOS (6 Panel):</label>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Sub-Panel NOS:</label>
             <select id="selectSectionCeklis" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-semibold">
               <option value="">-- Pilih Panel --</option>
               <option value="H1 Premises">🏢 H1 Premises</option>
@@ -117,40 +106,20 @@
           </div>
         </div>
 
-        <div class="mt-5 flex justify-between items-center pt-3 border-t">
-          <span id="lockStatusNotice" class="text-xs font-semibold text-amber-600"></span>
-          <button onclick="startSession()" id="btnStartSession" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
-            <i class="fa-solid fa-play"></i> Mulai / Lanjutkan Audit
+        <div class="mt-5 flex justify-end pt-3 border-t">
+          <button onclick="startSession()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> Mulai Audit
           </button>
         </div>
       </div>
 
-      <!-- ITEM CHECKLIST CONTAINER -->
       <div id="checklistWorkArea" class="hidden">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 flex justify-between items-center">
-          <div>
-            <span class="text-xs font-bold text-blue-700 uppercase block">Sesi Aktif:</span>
-            <span id="activeSessionInfo" class="text-sm font-bold text-slate-800"></span>
-          </div>
-          <button onclick="finishSession()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow">
-            <i class="fa-solid fa-check-circle mr-1"></i> Selesaikan Panel Ini
-          </button>
-        </div>
-
-        <!-- TRACKER PROGRESS DI FORM AUDIT -->
-        <div id="formProgressTracker" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-xs font-semibold text-amber-900 hidden">
-        </div>
-
-        <div id="checklistItemsContainer" class="space-y-4">
-        </div>
+        <div id="checklistItemsContainer" class="space-y-4"></div>
       </div>
     </section>
 
-    <!-- ==========================================
-         VIEW 2: DASHBOARD & GRADE
-         ========================================== -->
-    <section id="dashboardView" class="hidden">
-      <!-- HEADER DASHBOARD & FILTER AREA -->
+    <!-- VIEW 2: DASHBOARD & GRADE -->
+    <section id="dashboardView" class="block">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -159,16 +128,14 @@
           <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
         </div>
 
-        <!-- FILTER CONTROLS -->
         <div class="flex flex-wrap items-center gap-3">
-          <button onclick="loadInitialData(); loadDashboardData();" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm text-slate-700 transition flex items-center gap-1 font-semibold">
+          <button onclick="loadAllData()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm text-slate-700 transition flex items-center gap-1 font-semibold">
             <i class="fa-solid fa-rotate"></i> Refresh
           </button>
           
-          <!-- FILTER GRADE -->
           <div>
             <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Grade:</label>
-            <select id="filterGrade" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="filterGrade" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold">
               <option value="ALL">Semua Grade</option>
               <option value="PLATINUM">💎 Platinum</option>
               <option value="GOLD">🥇 Gold</option>
@@ -177,25 +144,19 @@
             </select>
           </div>
 
-          <!-- FILTER CABANG -->
           <div>
             <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
-            <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold">
               <option value="ALL">Semua Cabang</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- CARDS SUMMARY (KPIS) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpiContainer">
-      </div>
+      <!-- CARDS SUMMARY -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpiContainer"></div>
 
-      <!-- PANEL INDIKATOR PENGERJAAN 6 PANEL & FOCUS TRACKER -->
-      <div id="sectionBreakdownContainer" class="mb-6 hidden space-y-6">
-      </div>
-
-      <!-- TABEL DETAIL PENCAPAIAN CABANG -->
+      <!-- TABEL DETAIL -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 class="font-bold text-slate-700 text-base">Detail Pencapaian Cabang</h3>
@@ -213,6 +174,9 @@
               </tr>
             </thead>
             <tbody id="branchTableBody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data dari server...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -221,630 +185,159 @@
 
   </main>
 
-  <!-- JAVASCRIPT UTAMA -->
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwL8fssAEfYxMchqCb9450jqff6aU4-mR7I-fV28TwWl_1fjYonhcCkYpFxKSQL8-TbyQ/exec";
 
-    const ALL_NOS_PANELS = [
-      "H1 Premises",
-      "H1 Process",
-      "H2 People",
-      "H23 Premises",
-      "H23 Process",
-      "H23 People"
-    ];
-
-    let masterCabang = [];
+    let masterBranches = [];
     let masterChecklist = [];
-    let rawDashboardData = null;
-    let currentSessionId = null;
-    let lockedSections = {};
-    let answeredItemsMap = {};
+    let branchDataList = [];
 
     function switchTab(tab) {
-      const btnCeklis = document.getElementById("btn-ceklis");
-      const btnDashboard = document.getElementById("btn-dashboard");
-      const ceklisView = document.getElementById("ceklisView");
-      const dashboardView = document.getElementById("dashboardView");
-
       if (tab === "ceklis") {
-        ceklisView.classList.remove("hidden");
-        dashboardView.classList.add("hidden");
-        btnCeklis.className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
-        btnDashboard.className = "px-4 py-2 rounded-lg text-sm font-medium transition bg-blue-700 hover:bg-blue-800 text-white";
+        document.getElementById("ceklisView").classList.remove("hidden");
+        document.getElementById("dashboardView").classList.add("hidden");
+        document.getElementById("btn-ceklis").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
+        document.getElementById("btn-dashboard").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white";
       } else {
-        ceklisView.classList.add("hidden");
-        dashboardView.classList.remove("hidden");
-        btnDashboard.className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
-        btnCeklis.className = "px-4 py-2 rounded-lg text-sm font-medium transition bg-blue-700 hover:bg-blue-800 text-white";
-        loadDashboardData();
+        document.getElementById("ceklisView").classList.add("hidden");
+        document.getElementById("dashboardView").classList.remove("hidden");
+        document.getElementById("btn-dashboard").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-white text-blue-600 shadow";
+        document.getElementById("btn-ceklis").className = "px-4 py-2 rounded-lg text-sm font-bold transition bg-blue-700 hover:bg-blue-800 text-white";
       }
     }
 
-    // HELPER UNTUK EKSTRAKSI NAMA DAN KODE CABANG SECARA FLEKSIBEL
-    function parseBranchObject(item) {
-      if (!item) return { nama: "", kode: "" };
-      if (typeof item === "string") return { nama: item, kode: item };
-
-      const nama = item.Nama_Cabang || item.namaCabang || item.NamaCabang || item["Nama Cabang"] || item.nama || item.Kode_Cabang || item.kodeCabang || "";
-      const kode = item.Kode_Cabang || item.kodeCabang || item.KodeCabang || item["Kode Cabang"] || item.kode || nama;
-      return { nama, kode };
+    function showStatusBanner(msg, isError = false) {
+      const banner = document.getElementById("apiStatusBanner");
+      const text = document.getElementById("apiStatusText");
+      banner.classList.remove("hidden", "bg-amber-500", "bg-red-600", "bg-emerald-600");
+      banner.classList.add(isError ? "bg-red-600" : "bg-emerald-600");
+      text.textContent = msg;
+      if (!isError) setTimeout(() => banner.classList.add("hidden"), 4000);
     }
 
-    // 1. LOAD INITIAL DATA DENGAN SAFE PARSING UNTUK DROPDOWN
-    async function loadInitialData() {
+    async function loadAllData() {
+      const banner = document.getElementById("apiStatusBanner");
+      const text = document.getElementById("apiStatusText");
+      banner.classList.remove("hidden", "bg-red-600", "bg-emerald-600");
+      banner.classList.add("bg-amber-500");
+      text.textContent = "⏳ Menghubungkan ke Google Sheets API...";
+
       try {
         const response = await fetch(`${API_URL}?action=getInitialData`);
-        const res = await response.json();
+        const json = await response.json();
 
-        if (res.status === "success" || res.masterCabang || res.data) {
-          const rawData = res.data || res;
-          masterCabang = rawData.masterCabang || rawData.cabangList || rawData.cabang || [];
-          masterChecklist = rawData.masterChecklist || rawData.checklist || [];
+        console.log("Data diterima:", json);
 
-          populateAllBranchDropdowns();
-        }
+        // Parse Ekstraksi Cabang
+        const rawCabang = json.masterCabang || json.branches || json.data || [];
+        masterBranches = rawCabang.map(item => {
+          if (typeof item === "string") return { nama: item, kode: item };
+          return {
+            nama: item.Nama_Cabang || item.namaCabang || item.nama || item.Kode_Cabang || "Cabang Tanpa Nama",
+            kode: item.Kode_Cabang || item.kodeCabang || item.kode || item.Nama_Cabang || ""
+          };
+        });
+
+        branchDataList = json.branches || masterBranches.map(b => ({
+          nama: b.nama,
+          kode: b.kode,
+          progress: 0,
+          score: 0,
+          grade: "BRONZE"
+        }));
+
+        populateDropdowns();
+        renderDashboard();
+        showStatusBanner("✅ Data Berhasil Dimuat!", false);
+
       } catch (err) {
-        console.error("Gagal load initial data:", err);
+        console.error("API Fetch Error:", err);
+        showStatusBanner("❌ Gagal Mengambil Data: " + err.message + ". Pastikan Google Script di-deploy dengan akses 'Anyone'.", true);
+        
+        document.getElementById("branchTableBody").innerHTML = `
+          <tr>
+            <td colspan="4" class="py-8 text-center text-red-500 font-bold">
+              ❌ Gagal terhubung ke Google Sheets API.<br>
+              <span class="text-xs font-normal text-slate-500">Pastikan 'Who has access' di Google Apps Script disetting ke 'Anyone'.</span>
+            </td>
+          </tr>
+        `;
       }
     }
 
-    // POPULASIKAN KEDUA DROPDOWN CABANG SEKALIGUS
-    function populateAllBranchDropdowns() {
+    function populateDropdowns() {
       const selectCeklis = document.getElementById("selectCabangCeklis");
-      const selectDashboard = document.getElementById("filterCabang");
-
-      // Simpan value yang sedang terpilih (jika ada)
-      const currentCeklisVal = selectCeklis.value;
-      const currentDashVal = selectDashboard.value;
+      const selectDash = document.getElementById("filterCabang");
 
       selectCeklis.innerHTML = '<option value="">-- Pilih Cabang --</option>';
-      selectDashboard.innerHTML = '<option value="ALL">Semua Cabang</option>';
+      selectDash.innerHTML = '<option value="ALL">Semua Cabang</option>';
 
-      if (!masterCabang || masterCabang.length === 0) return;
+      masterBranches.forEach(b => {
+        const opt1 = document.createElement("option");
+        opt1.value = b.kode;
+        opt1.textContent = `${b.nama} (${b.kode})`;
+        selectCeklis.appendChild(opt1);
 
-      const uniqueBranches = new Map();
-
-      masterCabang.forEach(c => {
-        const parsed = parseBranchObject(c);
-        if (parsed.nama && !uniqueBranches.has(parsed.nama)) {
-          uniqueBranches.set(parsed.nama, parsed.kode);
-        }
+        const opt2 = document.createElement("option");
+        opt2.value = b.nama;
+        opt2.textContent = b.nama;
+        selectDash.appendChild(opt2);
       });
-
-      uniqueBranches.forEach((kode, nama) => {
-        // Dropdown Ceklis
-        const optCeklis = document.createElement("option");
-        optCeklis.value = kode;
-        optCeklis.dataset.nama = nama;
-        optCeklis.textContent = `${nama} (${kode})`;
-        selectCeklis.appendChild(optCeklis);
-
-        // Dropdown Dashboard Filter
-        const optDash = document.createElement("option");
-        optDash.value = nama;
-        optDash.textContent = nama;
-        selectDashboard.appendChild(optDash);
-      });
-
-      if (currentCeklisVal) selectCeklis.value = currentCeklisVal;
-      if (currentDashVal) selectDashboard.value = currentDashVal;
-    }
-
-    async function checkBranchStatus() {
-      const kodeCabang = document.getElementById("selectCabangCeklis").value;
-      const notice = document.getElementById("lockStatusNotice");
-
-      if (!kodeCabang) {
-        notice.textContent = "";
-        return;
-      }
-
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: kodeCabang })
-        });
-        const res = await response.json();
-        if (res.status === "success") {
-          lockedSections = res.data || {};
-          let infoText = [];
-          Object.keys(lockedSections).forEach(sec => {
-            infoText.push(`${sec}: ${lockedSections[sec].status} oleh ${lockedSections[sec].user}`);
-          });
-
-          if (infoText.length > 0) {
-            notice.textContent = "ℹ️ " + infoText.join(" | ");
-          } else {
-            notice.textContent = "✅ Belum ada panel terkunci di cabang ini.";
-          }
-        }
-      } catch (err) {
-        console.error("Gagal cek branch status:", err);
-      }
-    }
-
-    async function startSession() {
-      const selectCabang = document.getElementById("selectCabangCeklis");
-      const kodeCabang = selectCabang.value;
-      const selectedOpt = selectCabang.options[selectCabang.selectedIndex];
-      const namaCabang = selectedOpt ? (selectedOpt.dataset.nama || selectedOpt.text) : kodeCabang;
-
-      const namaUser = document.getElementById("inputNamaUser").value.trim();
-      const jabatan = document.getElementById("inputJabatan").value.trim();
-      const section = document.getElementById("selectSectionCeklis").value;
-
-      if (!kodeCabang || !namaUser || !section) {
-        alert("Harap lengkapi Cabang, Nama User, dan Sub-Panel NOS!");
-        return;
-      }
-
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "startOrResumeSession",
-            kodeCabang: kodeCabang,
-            namaCabang: namaCabang,
-            section: section,
-            namaUser: namaUser,
-            jabatan: jabatan
-          })
-        });
-
-        const res = await response.json();
-        if (res.status === "success") {
-          currentSessionId = res.data.sessionId;
-          answeredItemsMap = res.data.answers || {};
-
-          document.getElementById("activeSessionInfo").textContent = `${namaCabang} - Panel: ${section} (Auditor: ${namaUser})`;
-          document.getElementById("checklistWorkArea").classList.remove("hidden");
-          renderChecklistItems(section);
-        }
-      } catch (err) {
-        alert("Gagal memulai sesi: " + err);
-      }
-    }
-
-    function renderChecklistItems(section) {
-      const container = document.getElementById("checklistItemsContainer");
-      const tracker = document.getElementById("formProgressTracker");
-      container.innerHTML = "";
-
-      const filtered = masterChecklist.filter(item => {
-        const sec = item.Section || item.section || "";
-        return sec.toLowerCase() === section.toLowerCase() || !section;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<div class="p-6 bg-white rounded-xl text-center text-slate-500">Tidak ada item audit untuk sub-panel ini.</div>`;
-        tracker.classList.add("hidden");
-        return;
-      }
-
-      let answeredCount = 0;
-      filtered.forEach(item => {
-        const idChecklist = item.ID_Checklist || item.idChecklist;
-        if (answeredItemsMap[idChecklist]) answeredCount++;
-      });
-
-      const unAnsweredCount = filtered.length - answeredCount;
-      tracker.classList.remove("hidden");
-      tracker.innerHTML = `
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-bold">Progress Panel ${section}: ${answeredCount} / ${filtered.length} Dikerjakan</span>
-          <span class="font-bold ${unAnsweredCount === 0 ? 'text-emerald-700' : 'text-amber-700'}">
-            ${unAnsweredCount === 0 ? '🎉 Semua Item Di Panel Ini Selesai!' : `⚠️ Ada ${unAnsweredCount} item yang belum dikerjakan`}
-          </span>
-        </div>
-        <div class="w-full bg-amber-200 rounded-full h-2 overflow-hidden">
-          <div class="bg-amber-600 h-2 rounded-full" style="width: ${(answeredCount / filtered.length) * 100}%"></div>
-        </div>
-      `;
-
-      filtered.forEach((item, index) => {
-        const idChecklist = item.ID_Checklist || item.idChecklist || `CHK-${index}`;
-        const itemText = item.Item_Checklist || item.itemChecklist || "Item Audit";
-        const badge = (item.Kelas_Badge || item.kelasBadge || "").toUpperCase();
-        const savedAnswer = answeredItemsMap[idChecklist] || "";
-
-        let badgeTag = "";
-        if (badge.includes("SGP")) badgeTag = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-extrabold text-xs">MANDATORY SGP</span>`;
-        else if (badge.includes("GP")) badgeTag = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-extrabold text-xs">MANDATORY GP</span>`;
-        else if (badge.includes("P")) badgeTag = `<span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-extrabold text-xs">MANDATORY P</span>`;
-        else badgeTag = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold text-xs">REGULAR</span>`;
-
-        const card = document.createElement("div");
-        card.className = `p-5 rounded-xl border shadow-sm space-y-3 transition ${savedAnswer ? 'bg-white border-slate-200' : 'bg-amber-50/50 border-amber-300'}`;
-        
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <span class="text-xs font-bold ${savedAnswer ? 'text-slate-400' : 'text-amber-600'}">
-                #${idChecklist} ${savedAnswer ? '✅ (Selesai)' : '⚠️ (Belum Dikerjakan)'}
-              </span>
-              <p class="font-bold text-slate-800 text-sm mt-0.5">${itemText}</p>
-            </div>
-            <div>${badgeTag}</div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-            <button type="button" onclick="saveAnswer('${idChecklist}', 'Exist Good', this, '${section}')" class="${getBtnClass('Exist Good', savedAnswer)}">Exist Good</button>
-            <button type="button" onclick="saveAnswer('${idChecklist}', 'Exist Not Good', this, '${section}')" class="${getBtnClass('Exist Not Good', savedAnswer)}">Exist Not Good</button>
-            <button type="button" onclick="saveAnswer('${idChecklist}', 'NotExist Good', this, '${section}')" class="${getBtnClass('NotExist Good', savedAnswer)}">NotExist Good</button>
-            <button type="button" onclick="saveAnswer('${idChecklist}', 'NotExist Not Good', this, '${section}')" class="${getBtnClass('NotExist Not Good', savedAnswer)}">NotExist Not Good</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function getBtnClass(val, currentVal) {
-      if (val === currentVal) {
-        return "p-2 border-2 border-emerald-600 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow";
-      }
-      return "p-2 border rounded-lg text-xs font-bold hover:bg-slate-100 transition text-slate-600 bg-white";
-    }
-
-    async function saveAnswer(idChecklist, answer, btnEl, section) {
-      if (!currentSessionId) {
-        alert("Sesi audit belum aktif!");
-        return;
-      }
-
-      answeredItemsMap[idChecklist] = answer;
-      renderChecklistItems(section);
-
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "saveAnswer",
-            sessionId: currentSessionId,
-            idChecklist: idChecklist,
-            hasilPenilaian: answer
-          })
-        });
-      } catch (err) {
-        console.error("Gagal simpan jawaban:", err);
-      }
-    }
-
-    async function finishSession() {
-      if (!currentSessionId) return;
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "completeSession", sessionId: currentSessionId })
-        });
-        alert("Panel berhasil diselesaikan!");
-        document.getElementById("checklistWorkArea").classList.add("hidden");
-        currentSessionId = null;
-      } catch (err) {
-        alert("Gagal menyelesaikan sesi: " + err);
-      }
-    }
-
-    // ==========================================
-    // 2. DASHBOARD RENDERING & ANALYTICS
-    // ==========================================
-    async function loadDashboardData() {
-      try {
-        const response = await fetch(`${API_URL}?action=getDashboardData`);
-        const result = await response.json();
-        
-        if (result.status === "success" || result.branches) {
-          rawDashboardData = result.data || result;
-          
-          if (rawDashboardData.masterCabang && rawDashboardData.masterCabang.length > 0) {
-            masterCabang = rawDashboardData.masterCabang;
-            populateAllBranchDropdowns();
-          }
-
-          renderDashboard();
-        }
-      } catch (err) {
-        console.error("Gagal load data dashboard:", err);
-      }
     }
 
     function getGradeBadgeHTML(grade) {
       const g = (grade || "BRONZE").toUpperCase();
-      if (g === "PLATINUM") {
-        return `<span class="badge-base badge-platinum"><i class="fa-solid fa-gem text-lg"></i> PLATINUM</span>`;
-      } else if (g === "GOLD") {
-        return `<span class="badge-base badge-gold"><i class="fa-solid fa-crown text-lg"></i> GOLD</span>`;
-      } else if (g === "SILVER") {
-        return `<span class="badge-base badge-silver"><i class="fa-solid fa-medal text-lg"></i> SILVER</span>`;
-      } else {
-        return `<span class="badge-base badge-bronze"><i class="fa-solid fa-award text-lg"></i> BRONZE</span>`;
-      }
+      if (g === "PLATINUM") return `<span class="badge-base badge-platinum"><i class="fa-solid fa-gem"></i> PLATINUM</span>`;
+      if (g === "GOLD") return `<span class="badge-base badge-gold"><i class="fa-solid fa-crown"></i> GOLD</span>`;
+      if (g === "SILVER") return `<span class="badge-base badge-silver"><i class="fa-solid fa-medal"></i> SILVER</span>`;
+      return `<span class="badge-base badge-bronze"><i class="fa-solid fa-award"></i> BRONZE</span>`;
     }
 
     function renderDashboard() {
-      if (!rawDashboardData) return;
-
       const selectedCabang = document.getElementById("filterCabang").value;
       const selectedGrade = document.getElementById("filterGrade").value;
 
-      let branches = rawDashboardData.branches || [];
-
-      if (branches.length === 0 && masterCabang.length > 0) {
-        branches = masterCabang.map(c => {
-          const parsed = parseBranchObject(c);
-          return {
-            nama: parsed.nama,
-            progress: 0,
-            score: 0,
-            grade: "BRONZE",
-            sections: {}
-          };
-        });
-      }
+      let filtered = [...branchDataList];
 
       if (selectedCabang !== "ALL") {
-        branches = branches.filter(b => b.nama === selectedCabang);
+        filtered = filtered.filter(b => b.nama === selectedCabang);
       }
-
       if (selectedGrade !== "ALL") {
-        branches = branches.filter(b => b.grade.toUpperCase() === selectedGrade);
+        filtered = filtered.filter(b => b.grade.toUpperCase() === selectedGrade);
       }
 
-      const gradeWeight = { "PLATINUM": 4, "GOLD": 3, "SILVER": 2, "BRONZE": 1 };
-      branches.sort((a, b) => {
-        const rankA = gradeWeight[a.grade.toUpperCase()] || 0;
-        const rankB = gradeWeight[b.grade.toUpperCase()] || 0;
-        if (rankB !== rankA) return rankB - rankA;
-        if (b.progress !== a.progress) return b.progress - a.progress;
-        return b.score - a.score;
-      });
-
-      renderKPIs(selectedCabang, branches);
-      renderSectionBreakdown(selectedCabang, branches);
-      renderTable(branches);
-    }
-
-    // MANDATORY FOCUS TRACKER & BREAKDOWN 6 PANEL NOS
-    function renderSectionBreakdown(selectedCabang, filteredBranches) {
-      const container = document.getElementById("sectionBreakdownContainer");
-      
-      if (selectedCabang === "ALL" || filteredBranches.length === 0) {
-        container.classList.add("hidden");
-        return;
-      }
-
-      container.classList.remove("hidden");
-      const target = filteredBranches[0];
-      const secData = target.sections || {};
-
-      let sectionCardsHTML = "";
-      let totalUnfinished = 0;
-
-      let sgpPendingList = [];
-      let gpPendingList = [];
-      let pPendingList = [];
-      let otherPendingList = [];
-
-      ALL_NOS_PANELS.forEach(sec => {
-        const info = secData[sec] || { total: 10, done: 0, pendingItems: [] };
-        const total = info.total || 10;
-        const done = info.done || 0;
-        const pending = total - done;
-        const pct = Math.round((done / total) * 100);
-
-        totalUnfinished += pending;
-
-        let statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">🟢 100% Selesai</span>`;
-        if (pct === 0) {
-          statusBadge = `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold text-xs">🔴 0% Disentuh</span>`;
-        } else if (pct < 100) {
-          statusBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold text-xs">🟡 Belum Selesai (${pct}%)</span>`;
-        }
-
-        sectionCardsHTML += `
-          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="font-bold text-slate-800 text-sm">${sec}</span>
-              ${statusBadge}
-            </div>
-            <div class="flex justify-between text-xs text-slate-500 font-semibold">
-              <span>Progres: ${done} / ${total} Item</span>
-              <span class="${pending > 0 ? 'text-amber-600 font-bold' : 'text-slate-400'}">${pending} item belum dikerjakan</span>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-              <div class="bg-blue-600 h-2 rounded-full" style="width: ${pct}%"></div>
-            </div>
-          </div>
-        `;
-
-        if (info.pendingItems && info.pendingItems.length > 0) {
-          info.pendingItems.forEach(item => {
-            const badge = (item.badge || "").toUpperCase();
-            const itemData = { sec: sec, id: item.id, text: item.text, badge: badge };
-
-            if (badge.includes("SGP")) sgpPendingList.push(itemData);
-            else if (badge.includes("GP")) gpPendingList.push(itemData);
-            else if (badge.includes("P")) pPendingList.push(itemData);
-            else otherPendingList.push(itemData);
-          });
-        }
-      });
-
-      // STATUS EKSKLUSIF FOCUS TRACKER MANDATORY TERBARU
-      const isSilverTarget = sgpPendingList.length === 0;
-      const isGoldTarget = isSilverTarget && gpPendingList.length === 0;
-      const isPlatinumTarget = isGoldTarget && pPendingList.length === 0;
-
-      container.innerHTML = `
-        <!-- 1. STATUS BREAKDOWN 6 PANEL NOS -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4">
-          <div class="flex justify-between items-center border-b pb-3">
-            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-              <i class="fa-solid fa-layer-group text-blue-600"></i> Status Pengerjaan 6 Panel NOS (${selectedCabang})
-            </h3>
-            <span class="text-xs font-bold ${totalUnfinished > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} px-3 py-1 rounded-full">
-              Total ${totalUnfinished} Item Belum Dikerjakan
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${sectionCardsHTML}
-          </div>
+      // Render KPI
+      const kpiContainer = document.getElementById("kpiContainer");
+      kpiContainer.innerHTML = `
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang Monitoring</span>
+          <div class="text-3xl font-extrabold text-slate-800 mt-2">${masterBranches.length}</div>
         </div>
-
-        <!-- 2. MANDATORY FOCUS TRACKER DECK (UNTUK NAIK GRADING) -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4">
-          <div class="border-b pb-3 flex justify-between items-center">
-            <div>
-              <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                <i class="fa-solid fa-bullseye text-red-600"></i> Mandatory Focus Tracker (Kunci Naik Grading)
-              </h3>
-              <p class="text-xs text-slate-500 mt-0.5">Fokus pengerjakan item Exist Good pada kelas badge untuk memenuhi target grade.</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-500">Target Selanjutnya:</span>
-              ${!isSilverTarget ? '<span class="badge-base badge-silver !text-xs !py-1 !px-2.5">Target SILVER</span>' : 
-                !isGoldTarget ? '<span class="badge-base badge-gold !text-xs !py-1 !px-2.5">Target GOLD</span>' : 
-                !isPlatinumTarget ? '<span class="badge-base badge-platinum !text-xs !py-1 !px-2.5">Target PLATINUM</span>' : 
-                '<span class="badge-base badge-platinum !text-xs !py-1 !px-2.5">💎 MAX (PLATINUM)</span>'}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <!-- TRACKER SGP (SYARAT SILVER) -->
-            <div class="p-4 rounded-xl border ${sgpPendingList.length > 0 ? 'bg-red-50/70 border-red-200' : 'bg-emerald-50/70 border-emerald-200'}">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-extrabold text-xs text-red-700 uppercase flex items-center gap-1">
-                  1. SGP (Syarat Silver)
-                </span>
-                <span class="text-xs font-extrabold ${sgpPendingList.length > 0 ? 'text-red-700 bg-red-100' : 'text-emerald-700 bg-emerald-100'} px-2 py-0.5 rounded">
-                  ${sgpPendingList.length > 0 ? `Kurang ${sgpPendingList.length} Item` : '✅ SGP 100% Good'}
-                </span>
-              </div>
-              <p class="text-xs text-slate-600 mb-3">Wajib 100% Exist Good agar cabang lolos kualifikasi <b>Silver Grade</b>.</p>
-              <ul class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                ${sgpPendingList.length > 0 ? sgpPendingList.map(i => `
-                  <li class="text-xs bg-white p-2 rounded border border-red-200 shadow-sm">
-                    <span class="font-bold text-red-700">[${i.sec}] #${i.id}</span>
-                    <p class="text-slate-700 text-[11px] mt-0.5">${i.text}</p>
-                  </li>
-                `).join('') : '<li class="text-xs text-emerald-700 font-bold">🎉 Syarat SGP Silver Terpenuhi!</li>'}
-              </ul>
-            </div>
-
-            <!-- TRACKER GP (SYARAT GOLD) -->
-            <div class="p-4 rounded-xl border ${gpPendingList.length > 0 ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/70 border-emerald-200'}">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-extrabold text-xs text-amber-800 uppercase flex items-center gap-1">
-                  2. GP (Syarat Gold)
-                </span>
-                <span class="text-xs font-extrabold ${gpPendingList.length > 0 ? 'text-amber-800 bg-amber-100' : 'text-emerald-700 bg-emerald-100'} px-2 py-0.5 rounded">
-                  ${gpPendingList.length > 0 ? `Kurang ${gpPendingList.length} Item` : '✅ GP 100% Good'}
-                </span>
-              </div>
-              <p class="text-xs text-slate-600 mb-3">Wajib SGP & GP 100% Exist Good untuk lolos kualifikasi <b>Gold Grade</b>.</p>
-              <ul class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                ${gpPendingList.length > 0 ? gpPendingList.map(i => `
-                  <li class="text-xs bg-white p-2 rounded border border-amber-200 shadow-sm">
-                    <span class="font-bold text-amber-800">[${i.sec}] #${i.id}</span>
-                    <p class="text-slate-700 text-[11px] mt-0.5">${i.text}</p>
-                  </li>
-                `).join('') : '<li class="text-xs text-emerald-700 font-bold">🎉 Syarat GP Gold Terpenuhi!</li>'}
-              </ul>
-            </div>
-
-            <!-- TRACKER P (SYARAT PLATINUM) -->
-            <div class="p-4 rounded-xl border ${pPendingList.length > 0 ? 'bg-blue-50/70 border-blue-200' : 'bg-emerald-50/70 border-emerald-200'}">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-extrabold text-xs text-blue-800 uppercase flex items-center gap-1">
-                  3. P (Syarat Platinum)
-                </span>
-                <span class="text-xs font-extrabold ${pPendingList.length > 0 ? 'text-blue-800 bg-blue-100' : 'text-emerald-700 bg-emerald-100'} px-2 py-0.5 rounded">
-                  ${pPendingList.length > 0 ? `Kurang ${pPendingList.length} Item` : '✅ P 100% Good'}
-                </span>
-              </div>
-              <p class="text-xs text-slate-600 mb-3">Wajib SGP, GP & P 100% Exist Good untuk kualifikasi puncak <b>Platinum Grade</b>.</p>
-              <ul class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                ${pPendingList.length > 0 ? pPendingList.map(i => `
-                  <li class="text-xs bg-white p-2 rounded border border-blue-200 shadow-sm">
-                    <span class="font-bold text-blue-800">[${i.sec}] #${i.id}</span>
-                    <p class="text-slate-700 text-[11px] mt-0.5">${i.text}</p>
-                  </li>
-                `).join('') : '<li class="text-xs text-emerald-700 font-bold">🎉 Syarat P Platinum Terpenuhi!</li>'}
-              </ul>
-            </div>
-          </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-xs font-bold text-emerald-600 uppercase">Rata-rata Compliance</span>
+          <div class="text-3xl font-extrabold text-emerald-600 mt-2">0%</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-xs font-bold text-amber-600 uppercase">Total Panel Selesai</span>
+          <div class="text-3xl font-extrabold text-amber-600 mt-2">0</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-xs font-bold text-purple-600 uppercase">Cabang Terfilter</span>
+          <div class="text-3xl font-extrabold text-purple-600 mt-2">${filtered.length}</div>
         </div>
       `;
-    }
 
-    function renderKPIs(selectedCabang, filteredBranches) {
-      const container = document.getElementById("kpiContainer");
-
-      if (selectedCabang === "ALL") {
-        const totalCabang = rawDashboardData.totalCabang || filteredBranches.length;
-        const avgScore = rawDashboardData.avgScore || 0;
-        const completedSections = rawDashboardData.completedSections || 0;
-
-        container.innerHTML = `
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang Monitoring</span>
-            <div class="text-3xl font-extrabold text-slate-800 mt-2">${totalCabang}</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-emerald-600 uppercase">Rata-rata Compliance</span>
-            <div class="text-3xl font-extrabold text-emerald-600 mt-2">${avgScore}%</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-amber-600 uppercase">Total Panel Selesai</span>
-            <div class="text-3xl font-extrabold text-amber-600 mt-2">${completedSections}</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-purple-600 uppercase">Jumlah Cabang Tampil</span>
-            <div class="text-3xl font-extrabold text-purple-600 mt-2">${filteredBranches.length} <span class="text-xs font-normal text-slate-500">Cabang</span></div>
-          </div>
-        `;
-      } else {
-        const target = filteredBranches[0] || { progress: 0, score: 0, grade: "BRONZE" };
-        
-        container.innerHTML = `
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-blue-600 uppercase">Cabang Dipilih</span>
-            <div class="text-2xl font-extrabold text-slate-800 mt-2 truncate">${selectedCabang}</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-emerald-600 uppercase">Progress Overall</span>
-            <div class="text-3xl font-extrabold text-emerald-600 mt-2">${target.progress}%</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-xs font-bold text-amber-600 uppercase">Score Compliance</span>
-            <div class="text-3xl font-extrabold text-amber-600 mt-2">${target.score}%</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-blue-200 bg-blue-50/40 shadow-sm">
-            <span class="text-xs font-bold text-purple-700 uppercase">Grade Pencapaian Final</span>
-            <div class="mt-2.5">${getGradeBadgeHTML(target.grade)}</div>
-          </div>
-        `;
-      }
-    }
-
-    function renderTable(branches) {
+      // Render Tabel
       const tbody = document.getElementById("branchTableBody");
-      const countBadge = document.getElementById("branchCountBadge");
-      
-      countBadge.textContent = `Total: ${branches.length} Cabang`;
+      document.getElementById("branchCountBadge").textContent = `Total: ${filtered.length} Cabang`;
       tbody.innerHTML = "";
 
-      if (branches.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" class="py-8 text-center text-slate-400">Tidak ada cabang yang sesuai filter.</td>
-          </tr>
-        `;
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Tidak ada cabang ditemukan.</td></tr>`;
         return;
       }
 
-      branches.forEach(b => {
+      filtered.forEach(b => {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
         tr.innerHTML = `
@@ -864,12 +357,7 @@
       });
     }
 
-    // INITIALIZATION
-    window.addEventListener("DOMContentLoaded", () => {
-      loadInitialData();
-      loadDashboardData();
-    });
+    window.addEventListener("DOMContentLoaded", loadAllData);
   </script>
-
 </body>
 </html>
