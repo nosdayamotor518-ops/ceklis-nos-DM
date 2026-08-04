@@ -6,969 +6,346 @@
   <title>Monitoring NOS Cabang</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React & ReactDOM CDN -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel untuk JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
-    body { background-color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const API_URL = "https://script.google.com/macros/s/AKfycbwL8fssAEfYxMchqCb9450jqff6aU4-mR7l-fV28TwWl_1fjYonhcCkYpFxKSQL8-TbyQ/exec";
-
-    const SECTIONS = [
-      "H1 Premises", "H1 Process", "H1 People",
-      "H23 Premises", "H23 Process", "H23 People"
-    ];
-
-    const isPriorityItem = (badgeString) => {
-      if (!badgeString) return false;
-      const badges = String(badgeString).split(",").map(b => b.trim());
-      return badges.some(b => ["P", "GP", "SGP"].includes(b));
-    };
-
-    const renderBadges = (badgeString, isLarge = false) => {
-      if (!badgeString) return null;
-      const badges = String(badgeString).split(",").map(b => b.trim());
-      return badges.map((b, i) => {
-        let bg = "bg-slate-100 text-slate-700 border-slate-300";
-        if (b === "P") bg = "bg-red-600 text-white border-red-700 font-black shadow-xs";
-        else if (b === "GP") bg = "bg-purple-600 text-white border-purple-700 font-black shadow-xs";
-        else if (b === "SGP") bg = "bg-indigo-700 text-white border-indigo-900 font-black shadow-xs";
-        else if (b === "Mudah") bg = "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold";
-        else if (b === "Murah") bg = "bg-teal-100 text-teal-800 border-teal-300 font-semibold";
-
-        const sizeClass = isLarge ? "text-xs px-2.5 py-0.5" : "text-[10px] px-2 py-0.5";
-
-        return (
-          <span key={i} className={`${sizeClass} rounded-full border ${bg} inline-flex items-center gap-1`}>
-            {(b === 'P' || b === 'GP' || b === 'SGP') && <span>⭐</span>}
-            {b}
-          </span>
-        );
-      });
-    };
-
-    // Component Badge Grade Dealer Finalisasi
-    const renderGradeBadge = (grade) => {
-      const g = String(grade || "").toUpperCase();
-      if (g === "PLATINUM") {
-        return (
-          <span className="px-2.5 py-1 rounded-md font-extrabold text-[10px] tracking-wider bg-slate-900 text-cyan-300 border border-slate-700 shadow-2xs inline-flex items-center gap-1">
-            🏆 PLATINUM
-          </span>
-        );
-      }
-      if (g === "GOLD") {
-        return (
-          <span className="px-2.5 py-1 rounded-md font-extrabold text-[10px] tracking-wider bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs inline-flex items-center gap-1">
-            🥇 GOLD
-          </span>
-        );
-      }
-      if (g === "SILVER") {
-        return (
-          <span className="px-2.5 py-1 rounded-md font-extrabold text-[10px] tracking-wider bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs inline-flex items-center gap-1">
-            🥈 SILVER
-          </span>
-        );
-      }
-      if (g === "BRONZE") {
-        return (
-          <span className="px-2.5 py-1 rounded-md font-extrabold text-[10px] tracking-wider bg-orange-100 text-amber-900 border border-orange-300 shadow-2xs inline-flex items-center gap-1">
-            🥉 BRONZE
-          </span>
-        );
-      }
-      return (
-        <span className="px-2.5 py-1 rounded-md font-bold text-[10px] tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
-          N/A
-        </span>
-      );
-    };
-
-    function App() {
-      const [appMode, setAppMode] = React.useState("dashboard");
-
-      // Form States
-      const [step, setStep] = React.useState(1);
-      const [loading, setLoading] = React.useState(true);
-      const [saving, setSaving] = React.useState(false);
-      
-      const [masterCabang, setMasterCabang] = React.useState([]);
-      const [masterChecklist, setMasterChecklist] = React.useState([]);
-      const [lockedSections, setLockedSections] = React.useState({});
-      const [branchUsers, setBranchUsers] = React.useState([]);
-
-      // Form Identity
-      const [selectedCabang, setSelectedCabang] = React.useState("");
-      const [namaUser, setNamaUser] = React.useState("");
-      const [jabatan, setJabatan] = React.useState("");
-      
-      // Active Session & Section
-      const [selectedSection, setSelectedSection] = React.useState("");
-      const [sessionId, setSessionId] = React.useState("");
-      const [currentIndex, setCurrentIndex] = React.useState(0);
-      const [sectionItems, setSectionItems] = React.useState([]);
-      
-      // Active item temp
-      const [selectedRating, setSelectedRating] = React.useState("");
-      const [photoBase64, setPhotoBase64] = React.useState("");
-      const [showIndicatorModal, setShowIndicatorModal] = React.useState(false);
-
-      // Dashboard States
-      const [dashboardData, setDashboardData] = React.useState(null);
-      const [dashLoading, setDashLoading] = React.useState(false);
-      const [selectedDashCabang, setSelectedDashCabang] = React.useState("ALL");
-
-      React.useEffect(() => {
-        fetch(`${API_URL}?action=getInitialData`)
-          .then(res => res.json())
-          .then(res => {
-            if (res.status === "success") {
-              setMasterCabang(res.data.masterCabang || []);
-              setMasterChecklist(res.data.masterChecklist || []);
-            }
-            setLoading(false);
-            loadDashboard(res.data ? res.data.masterCabang : []);
-          })
-          .catch(() => {
-            setLoading(false);
-            loadDashboard([]);
-          });
-      }, []);
-
-      const handleCabangChange = (namaCabang) => {
-        const cleanNama = String(namaCabang).trim();
-        setSelectedCabang(cleanNama);
-        setNamaUser("");
-        setJabatan("");
-        setBranchUsers([]);
-
-        if (!cleanNama) return;
-
-        const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === cleanNama);
-        const cleanKode = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : cleanNama;
-
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "getBranchStatus", kodeCabang: cleanKode })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === "success") {
-            setLockedSections(res.data || {});
-            
-            const userMap = [];
-            Object.values(res.data || {}).forEach(item => {
-              if (item && item.user && !userMap.some(u => u.nama === item.user)) {
-                userMap.push({ nama: item.user, jabatan: item.jabatan || "" });
-              }
-            });
-            setBranchUsers(userMap);
-          }
-        });
-      };
-
-      const processDashboardResponse = (raw, fallbackMaster) => {
-        let branchesList = [];
-        let totalCabang = 0;
-        let avgScore = 0;
-        let completedSections = 0;
-        let overallGrade = "N/A";
-
-        if (raw) {
-          totalCabang = raw.totalCabang || raw.TotalCabang || 0;
-          avgScore = raw.avgScore || raw.AvgScore || 0;
-          completedSections = raw.completedSections || raw.CompletedSections || 0;
-          overallGrade = raw.overallGrade || raw.OverallGrade || "N/A";
-
-          if (Array.isArray(raw)) branchesList = raw;
-          else if (raw.branches && Array.isArray(raw.branches)) branchesList = raw.branches;
-          else if (raw.Branches && Array.isArray(raw.Branches)) branchesList = raw.Branches;
-          else if (raw.data && Array.isArray(raw.data)) branchesList = raw.data;
-        }
-
-        const sourceCabang = fallbackMaster && fallbackMaster.length > 0 ? fallbackMaster : masterCabang;
-
-        if (branchesList.length === 0 && sourceCabang.length > 0) {
-          branchesList = sourceCabang.map(c => ({
-            nama: c.Nama_Cabang || c.nama || "Cabang",
-            progress: 0,
-            score: 0,
-            grade: "N/A"
-          }));
-        }
-
-        const normalizedBranches = branchesList.map(b => {
-          const nama = b.nama || b.Nama || b.Nama_Cabang || b.namaCabang || "Cabang";
-          const progress = Number(b.progress || b.Progress || 0);
-          const score = Number(b.score || b.Score || 0);
-          let grade = b.grade || b.Grade || "N/A";
-
-          return { nama, progress, score, grade };
-        });
-
-        if (!totalCabang) totalCabang = normalizedBranches.length;
-
-        return {
-          totalCabang,
-          avgScore,
-          completedSections,
-          overallGrade,
-          branches: normalizedBranches
-        };
-      };
-
-      const loadDashboard = (initialMaster) => {
-        setDashLoading(true);
-
-        const applyData = (raw) => {
-          setDashboardData(processDashboardResponse(raw, initialMaster));
-          setDashLoading(false);
-        };
-
-        fetch(`${API_URL}?action=getDashboardData`)
-          .then(res => res.json())
-          .then(res => {
-            if (res && res.status === "success" && res.data) {
-              applyData(res.data);
-            } else {
-              fetchDashboardViaPost(applyData);
-            }
-          })
-          .catch(() => {
-            fetchDashboardViaPost(applyData);
-          });
-      };
-
-      const fetchDashboardViaPost = (callback) => {
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "getDashboardData" })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res && res.status === "success" && res.data) {
-            callback(res.data);
-          } else {
-            callback(null);
-          }
-        })
-        .catch(() => {
-          callback(null);
-        });
-      };
-
-      const handleSwitchMode = (mode) => {
-        setAppMode(mode);
-        if (mode === "dashboard") {
-          loadDashboard();
-        }
-      };
-
-      const handleBranchSelected = () => {
-        if (!selectedCabang || !namaUser || !jabatan) {
-          alert("Silakan isi Cabang, Nama, dan Jabatan terlebih dahulu!");
-          return;
-        }
-        setStep(2);
-      };
-
-      const handleSelectSection = (sec) => {
-        const lock = lockedSections[sec];
-        if (lock && lock.status === "COMPLETED") {
-          alert("Section ini sudah selesai dikerjakan!");
-          return;
-        }
-        if (lock && lock.status === "IN_PROGRESS" && lock.user !== namaUser) {
-          alert(`Section ini sedang dikerjakan oleh ${lock.user}. Silakan pilih section lain.`);
-          return;
-        }
-
-        setLoading(true);
-        setSelectedSection(sec);
-
-        const items = masterChecklist.filter(item => String(item.Section).trim() === String(sec).trim());
-        setSectionItems(items);
-
-        const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === String(selectedCabang).trim());
-        const kodeCabangKirim = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : selectedCabang;
-
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "startOrResumeSession",
-            kodeCabang: kodeCabangKirim,
-            namaCabang: selectedCabang,
-            section: sec,
-            namaUser: namaUser,
-            jabatan: jabatan
-          })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === "success") {
-            setSessionId(res.data.sessionId);
-            setCurrentIndex(0);
-            setStep(3);
-          }
-          setLoading(false);
-        });
-      };
-
-      const handleBackToSections = () => {
-        if (confirm("Kembali ke daftar pilihan section? Jawaban item yang sudah tersimpan tetap aman.")) {
-          setSelectedSection("");
-          setSessionId("");
-          setCurrentIndex(0);
-          setSectionItems([]);
-          setSelectedRating("");
-          setPhotoBase64("");
-          setShowIndicatorModal(false);
-
-          if (selectedCabang) {
-            const branchObj = masterCabang.find(c => String(c.Nama_Cabang).trim() === String(selectedCabang).trim());
-            const cleanKode = branchObj && String(branchObj.Kode_Cabang || "").trim() ? String(branchObj.Kode_Cabang).trim() : selectedCabang;
-
-            fetch(API_URL, {
-              method: "POST",
-              body: JSON.stringify({ action: "getBranchStatus", kodeCabang: cleanKode })
-            })
-            .then(res => res.json())
-            .then(res => {
-              if (res.status === "success") {
-                setLockedSections(res.data || {});
-              }
-            });
-          }
-
-          setStep(2);
-        }
-      };
-
-      const handlePhotoCapture = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const maxWidth = 1000;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-            setPhotoBase64(compressedBase64);
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      };
-
-      const handleSaveAnswer = () => {
-        const currentItem = sectionItems[currentIndex];
-        if (!selectedRating) {
-          alert("Pilih hasil penilaian terlebih dahulu!");
-          return;
-        }
-
-        const needPhoto = currentItem.Need_Photo === true || String(currentItem.Need_Photo).toUpperCase() === "TRUE";
-        const isExist = selectedRating === "Exist Good" || selectedRating === "Exist Not Good";
-
-        if (needPhoto && isExist && !photoBase64) {
-          alert("Ceklis ini memerlukan bukti foto. Silakan ambil foto terlebih dahulu!");
-          return;
-        }
-
-        setSaving(true);
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "saveAnswer",
-            sessionId: sessionId,
-            idChecklist: currentItem.ID_Checklist,
-            hasilPenilaian: selectedRating,
-            imageBase64: photoBase64
-          })
-        })
-        .then(res => res.json())
-        .then(res => {
-          setSaving(false);
-          setSelectedRating("");
-          setPhotoBase64("");
-
-          if (currentIndex + 1 < sectionItems.length) {
-            setCurrentIndex(currentIndex + 1);
-          } else {
-            completeCurrentSession();
-          }
-        });
-      };
-
-      const handleSkipAnswer = () => {
-        setSelectedRating("");
-        setPhotoBase64("");
-
-        if (currentIndex + 1 < sectionItems.length) {
-          setCurrentIndex(currentIndex + 1);
-        } else {
-          if (confirm("Ini adalah item terakhir pada section ini. Selesaikan section?")) {
-            completeCurrentSession();
-          }
-        }
-      };
-
-      const completeCurrentSession = () => {
-        setLoading(true);
-        fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "completeSession", sessionId: sessionId })
-        })
-        .then(res => res.json())
-        .then(res => {
-          setLoading(false);
-          setStep(4);
-        });
-      };
-
-      if (loading) {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-slate-600 font-medium text-sm">Memuat aplikasi...</p>
-          </div>
-        );
-      }
-
-      return (
-        <div className="max-w-5xl mx-auto min-h-screen bg-white shadow-xs flex flex-col">
-          {/* Header Navigation Tab */}
-          <header className="bg-blue-600 text-white sticky top-0 z-20 shadow-xs">
-            <div className="px-6 py-4 flex items-center justify-between">
-              <h1 className="font-bold text-lg md:text-xl tracking-tight">Monitoring NOS Cabang</h1>
-              <div className="flex space-x-1 bg-blue-700/80 p-1 rounded-xl">
-                <button 
-                  onClick={() => handleSwitchMode("form")} 
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${appMode === 'form' ? 'bg-white text-blue-700 shadow-xs' : 'text-blue-100 hover:text-white'}`}
-                >
-                  📋 Form Ceklis
-                </button>
-                <button 
-                  onClick={() => handleSwitchMode("dashboard")} 
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${appMode === 'dashboard' ? 'bg-white text-blue-700 shadow-xs' : 'text-blue-100 hover:text-white'}`}
-                >
-                  📊 Dashboard & Grade
-                </button>
-              </div>
-            </div>
-          </header>
-
-          <main className="p-4 md:p-6 flex-1">
-            {/* VIEW 1: FORM CHECKLIST */}
-            {appMode === "form" && (
-              <div className="max-w-md mx-auto">
-                {step === 1 && (
-                  <div className="space-y-4">
-                    <div className="border-b pb-3">
-                      <h2 className="text-xl font-bold text-slate-800">Identitas Assessor</h2>
-                      <p className="text-xs text-slate-500">Pilih cabang dan masukan nama petugas audit.</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Pilih Cabang</label>
-                      <select 
-                        value={selectedCabang} 
-                        onChange={e => handleCabangChange(e.target.value)}
-                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">-- Pilih Cabang --</option>
-                        {masterCabang.map((c, i) => {
-                          const kode = String(c.Kode_Cabang || "").trim();
-                          const nama = String(c.Nama_Cabang || "").trim();
-                          return (
-                            <option key={i} value={nama}>
-                              {kode ? `${kode} - ` : ""}{nama}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    {branchUsers.length > 0 && (
-                      <div className="bg-blue-50/70 border border-blue-200 p-3 rounded-xl space-y-1">
-                        <label className="block text-xs font-bold text-blue-900">
-                          👤 Petugas Terdaftar di Cabang Ini:
-                        </label>
-                        <select
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val) {
-                              const found = branchUsers.find(u => u.nama === val);
-                              if (found) {
-                                setNamaUser(found.nama);
-                                setJabatan(found.jabatan);
-                              }
-                            }
-                          }}
-                          className="w-full p-2 border rounded-lg text-xs bg-white text-slate-800 font-medium"
-                        >
-                          <option value="">-- Gunakan Nama Terdaftar --</option>
-                          {branchUsers.map((u, i) => (
-                            <option key={i} value={u.nama}>{u.nama} ({u.jabatan || 'No Jabatan'})</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Petugas / User</label>
-                      <input 
-                        type="text" 
-                        placeholder="Nama Lengkap..." 
-                        value={namaUser}
-                        onChange={e => setNamaUser(e.target.value)}
-                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Jabatan Assessor</label>
-                      <input 
-                        type="text" 
-                        placeholder="Contoh: Auditor / Supervisor" 
-                        value={jabatan}
-                        onChange={e => setJabatan(e.target.value)}
-                        className="w-full p-3 border rounded-xl bg-slate-50 text-slate-800 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-
-                    <button 
-                      onClick={handleBranchSelected}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-xs mt-2 text-sm"
-                    >
-                      Lanjut Pilih Section →
-                    </button>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <div className="border-b pb-3 flex justify-between items-center">
-                      <div>
-                        <span className="text-[11px] bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-bold">
-                          {selectedCabang} | {namaUser}
-                        </span>
-                        <h2 className="text-xl font-bold text-slate-800 mt-2">Pilih Section</h2>
-                      </div>
-                      <button onClick={() => setStep(1)} className="text-xs text-blue-600 font-semibold underline">
-                        Ubah Identitas
-                      </button>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {SECTIONS.map((sec, idx) => {
-                        const lock = lockedSections[sec];
-                        const isCompleted = lock && lock.status === "COMPLETED";
-                        const isInProgressOther = lock && lock.status === "IN_PROGRESS" && lock.user !== namaUser;
-                        const isMyProgress = lock && lock.status === "IN_PROGRESS" && lock.user === namaUser;
-
-                        return (
-                          <div 
-                            key={idx} 
-                            onClick={() => !isCompleted && !isInProgressOther && handleSelectSection(sec)}
-                            className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition ${
-                              isCompleted ? "bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed" :
-                              isInProgressOther ? "bg-amber-50/50 border-amber-200 opacity-70 cursor-not-allowed" :
-                              isMyProgress ? "bg-blue-50 border-blue-400 ring-1 ring-blue-300" :
-                              "bg-white border-slate-200 hover:border-blue-400 shadow-2xs"
-                            }`}
-                          >
-                            <div>
-                              <p className="font-bold text-slate-800 text-sm">{sec}</p>
-                              <p className="text-[11px] text-slate-500 mt-0.5">
-                                {isCompleted && `✓ Selesai (${lock.user})`}
-                                {isInProgressOther && `⏳ Sedang dikerjakan oleh ${lock.user}`}
-                                {isMyProgress && `🔄 Lanjutkan pengerjaan`}
-                                {!lock && `Siap dikerjakan`}
-                              </p>
-                            </div>
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg border bg-slate-50 text-slate-600">
-                              {isCompleted ? "Selesai" : isInProgressOther ? "Terkunci" : "Pilih"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {step === 3 && sectionItems.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-2">
-                      <button 
-                        onClick={handleBackToSections}
-                        className="text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition"
-                      >
-                        ← Kembali ke Section
-                      </button>
-                      <span className="text-xs font-semibold text-slate-600">
-                        {selectedCabang}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
-                        <span className="font-bold text-blue-800">Section: {selectedSection}</span>
-                        <span>Item {currentIndex + 1} / {sectionItems.length}</span>
-                      </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className="bg-blue-600 h-full transition-all duration-300" 
-                          style={{ width: `${((currentIndex + 1) / sectionItems.length) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {(() => {
-                      const item = sectionItems[currentIndex];
-                      const needPhoto = item.Need_Photo === true || String(item.Need_Photo).toUpperCase() === "TRUE";
-                      const isPrio = isPriorityItem(item.Kelas_Badge);
-                      const pjJabatan = item.Jabatan_Penanggung_Jawab || item.Jabatan_PJ || item["Jabatan Penanggung Jawab"];
-
-                      return (
-                        <div className="bg-white border rounded-2xl p-4 shadow-2xs space-y-4">
-                          <div className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${
-                            isPrio ? "bg-slate-900 text-white border-slate-800" : "bg-slate-50 text-slate-800 border-slate-200"
-                          }`}>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">{isPrio ? "🚨" : "📌"}</span>
-                              <p className="text-xs font-bold">
-                                {isPrio ? "CEKLIS PRIORITAS TINGGI" : "PENGISIAN STANDAR"}
-                              </p>
-                            </div>
-                            <div className="flex items-center flex-wrap gap-1">
-                              {renderBadges(item.Kelas_Badge, true)}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                              {needPhoto && (
-                                <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md border border-purple-200 font-bold">
-                                  📷 Wajib Foto
-                                </span>
-                              )}
-                              {pjJabatan && (
-                                <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md font-bold">
-                                  👔 PJ: {pjJabatan}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="text-base font-bold text-slate-800">{item.No_Item}. {item.Nama_Item}</h3>
-                          </div>
-
-                          <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3 space-y-1.5">
-                            <div className="flex justify-between items-center border-b border-amber-200/60 pb-1">
-                              <span className="text-xs font-bold text-amber-900">
-                                📋 Indikator Penilaian
-                              </span>
-                              <button 
-                                onClick={() => setShowIndicatorModal(true)}
-                                className="text-[10px] bg-amber-200/80 hover:bg-amber-300 text-amber-900 font-bold px-2 py-0.5 rounded transition"
-                              >
-                                Perbesar
-                              </button>
-                            </div>
-
-                            <div className="text-xs text-slate-700 whitespace-pre-line leading-relaxed max-h-32 overflow-y-auto pr-1">
-                              {item.Penjelasan_Indikator}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hasil Penilaian</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { label: "Exist Good", color: "border-emerald-500 bg-emerald-50 text-emerald-800" },
-                                { label: "Exist Not Good", color: "border-amber-500 bg-amber-50 text-amber-800" },
-                                { label: "Not Exist", color: "border-rose-500 bg-rose-50 text-rose-800" },
-                                { label: "Not Available", color: "border-slate-400 bg-slate-50 text-slate-700" }
-                              ].map((opt, i) => (
-                                <button
-                                  key={i}
-                                  onClick={() => setSelectedRating(opt.label)}
-                                  className={`p-3 rounded-xl border-2 font-bold text-xs text-center transition ${
-                                    selectedRating === opt.label ? `${opt.color} shadow-xs` : "border-slate-200 bg-white text-slate-700"
-                                  }`}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {needPhoto && (selectedRating === "Exist Good" || selectedRating === "Exist Not Good") && (
-                            <div className="border-t pt-3 space-y-2">
-                              <label className="block text-xs font-bold text-slate-700">Bukti Foto (Wajib)</label>
-                              {photoBase64 ? (
-                                <div className="relative rounded-xl overflow-hidden border border-slate-300">
-                                  <img src={photoBase64} alt="Evidence" className="w-full h-36 object-cover" />
-                                  <button 
-                                    onClick={() => setPhotoBase64("")}
-                                    className="absolute top-2 right-2 bg-rose-600 text-white text-xs px-2 py-1 rounded-lg shadow-xs"
-                                  >
-                                    Foto Ulang
-                                  </button>
-                                </div>
-                              ) : (
-                                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-blue-300 rounded-xl bg-blue-50/50 cursor-pointer">
-                                  <span className="text-xl mb-1">📷</span>
-                                  <span className="text-xs font-bold text-blue-700">Ambil Foto Kamera</span>
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    capture="environment" 
-                                    onChange={handlePhotoCapture} 
-                                    className="hidden" 
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex gap-2 pt-2">
-                            <button 
-                              type="button"
-                              disabled={saving}
-                              onClick={handleSkipAnswer}
-                              className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs border border-slate-200"
-                            >
-                              Skip
-                            </button>
-
-                            <button 
-                              type="button"
-                              disabled={saving}
-                              onClick={handleSaveAnswer}
-                              className="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-xs text-xs"
-                            >
-                              {saving ? "Simpan..." : "Simpan & Lanjut →"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {showIndicatorModal && (
-                      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl p-5 max-w-lg w-full space-y-3 shadow-xl">
-                          <div className="flex justify-between items-center border-b pb-2">
-                            <h4 className="font-bold text-slate-800 text-sm">📋 Indikator Penilaian</h4>
-                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Item {sectionItems[currentIndex]?.No_Item}</span>
-                          </div>
-
-                          <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto p-3 bg-slate-50 rounded-xl border">
-                            {sectionItems[currentIndex]?.Penjelasan_Indikator}
-                          </div>
-
-                          <button
-                            onClick={() => setShowIndicatorModal(false)}
-                            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-xl text-xs transition"
-                          >
-                            Tutup
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {step === 4 && (
-                  <div className="text-center py-10 space-y-4 bg-white border rounded-2xl p-6 shadow-2xs">
-                    <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
-                      ✓
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-800">Section Selesai!</h2>
-                    <p className="text-xs text-slate-600">
-                      Data section <strong className="text-blue-700">{selectedSection}</strong> telah berhasil diselesaikan.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSelectedSection("");
-                        setSessionId("");
-                        setCurrentIndex(0);
-                        setSectionItems([]);
-                        setSelectedRating("");
-                        setPhotoBase64("");
-                        setStep(2);
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl transition text-xs shadow-xs w-full"
-                    >
-                      Kembali ke Pilih Section
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* VIEW 2: DASHBOARD (UI CLEAN DENGAN BADGE GRADE DEALER) */}
-            {appMode === "dashboard" && (
-              <div className="space-y-6">
-                {/* Header Title & Controls */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                      📊 Dashboard Performance & Grade
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Ringkasan hasil monitoring audit cabang.</p>
-                  </div>
-
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
-                    <button 
-                      onClick={() => loadDashboard()}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border border-slate-300/80 shadow-2xs"
-                    >
-                      🔄 Reload
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-600">Filter Cabang:</label>
-                      <select
-                        value={selectedDashCabang}
-                        onChange={(e) => setSelectedDashCabang(e.target.value)}
-                        className="p-1.5 border border-slate-300 rounded-lg bg-white text-xs font-medium text-slate-800 shadow-2xs outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="ALL">Semua Cabang</option>
-                        {masterCabang.map((c, i) => (
-                          <option key={i} value={c.Nama_Cabang}>{c.Nama_Cabang}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {dashLoading ? (
-                  <div className="text-center py-12">
-                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-xs font-medium text-slate-500">Memuat data dashboard...</p>
-                  </div>
-                ) : !dashboardData ? (
-                  <div className="text-center py-12 text-slate-500 text-xs">
-                    Tidak ada data dashboard yang tersedia.
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* 4 Cards Pastel */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-blue-50/60 border border-blue-200/80 p-4 rounded-2xl">
-                        <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">TOTAL CABANG</p>
-                        <p className="text-3xl font-extrabold text-blue-900 mt-1">{dashboardData.totalCabang || 0}</p>
-                      </div>
-
-                      <div className="bg-emerald-50/60 border border-emerald-200/80 p-4 rounded-2xl">
-                        <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">AVG COMPLIANCE</p>
-                        <p className="text-3xl font-extrabold text-emerald-600 mt-1">{dashboardData.avgScore || 0}%</p>
-                      </div>
-
-                      <div className="bg-amber-50/60 border border-amber-200/80 p-4 rounded-2xl">
-                        <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">SECTION SELESAI</p>
-                        <p className="text-3xl font-extrabold text-amber-800 mt-1">{dashboardData.completedSections || 0}</p>
-                      </div>
-
-                      <div className="bg-purple-50/60 border border-purple-200/80 p-4 rounded-2xl">
-                        <p className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">GRADE NASIONAL</p>
-                        <div className="mt-1">
-                          {renderGradeBadge(dashboardData.overallGrade)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Panduan Kriteria Grading Priority */}
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-slate-600 space-y-1.5">
-                      <p className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                        ℹ️ Kriteria Grade Finalisasi Dealer (Mandatory Priority):
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-                        <div className="bg-white p-2 rounded-lg border border-slate-200">
-                          <strong className="text-orange-900">🥉 Bronze:</strong> Belum memenuhi kriteria priority minimal
-                        </div>
-                        <div className="bg-white p-2 rounded-lg border border-slate-200">
-                          <strong className="text-slate-800">🥈 Silver:</strong> Ceklis Mandatory <span className="font-extrabold text-indigo-700">SGP</span> 100% Exist Good
-                        </div>
-                        <div className="bg-white p-2 rounded-lg border border-slate-200">
-                          <strong className="text-amber-900">🥇 Gold:</strong> Ceklis Mandatory <span className="font-extrabold text-indigo-700">SGP & GP</span> 100% Exist Good
-                        </div>
-                        <div className="bg-white p-2 rounded-lg border border-slate-200">
-                          <strong className="text-slate-900">🏆 Platinum:</strong> Ceklis Mandatory <span className="font-extrabold text-indigo-700">SGP, GP & P</span> 100% Exist Good
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Table Container Clean */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-slate-800 text-sm">Detail Pencapaian Cabang</h3>
-                        <span className="text-[11px] bg-slate-100 text-slate-500 px-2.5 py-1 rounded-md border border-slate-200 font-medium">
-                          Total: {dashboardData.branches ? dashboardData.branches.length : 0} Cabang
-                        </span>
-                      </div>
-
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs text-slate-700">
-                          <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] tracking-wider font-bold border-b border-slate-200">
-                            <tr>
-                              <th className="py-3 px-4">CABANG</th>
-                              <th className="py-3 px-4">PROGRESS</th>
-                              <th className="py-3 px-4">SCORE</th>
-                              <th className="py-3 px-4">GRADE</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {(dashboardData.branches || [])
-                              .filter(b => selectedDashCabang === "ALL" || b.nama === selectedDashCabang)
-                              .map((b, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50/80 transition">
-                                  <td className="py-3.5 px-4 font-extrabold text-slate-800 uppercase tracking-tight">{b.nama}</td>
-                                  <td className="py-3.5 px-4 font-medium text-slate-700">{b.progress}%</td>
-                                  <td className="py-3.5 px-4 font-medium text-slate-700">{b.score}%</td>
-                                  <td className="py-3.5 px-4">
-                                    {renderGradeBadge(b.grade)}
-                                  </td>
-                                </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </main>
-        </div>
-      );
+    /* ==========================================
+       STYLING BADGE GRADE JAUH LEBIH BESAR & MENCOLOK
+       ========================================== */
+    .badge-base {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.95rem; /* Ukuran Teks Lebih Besar */
+      font-weight: 900;    /* Extra Bold */
+      letter-spacing: 0.08em;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    .badge-base:hover {
+      transform: translateY(-2px) scale(1.03);
+    }
+
+    /* 💎 PLATINUM BADGE */
+    .badge-platinum {
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      color: #00f2fe;
+      border: 2px solid #4facfe;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.6), inset 0 0 10px rgba(79, 172, 254, 0.4);
+      text-shadow: 0 0 8px rgba(0, 242, 254, 0.8);
+    }
+
+    /* 🥇 GOLD BADGE */
+    .badge-gold {
+      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+      color: #3b2003;
+      border: 2px solid #ffe082;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.7);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* 🥈 SILVER BADGE */
+    .badge-silver {
+      background: linear-gradient(135deg, #8A95A5 0%, #CFD6DF 40%, #FFFFFF 60%, #B0B7C3 100%);
+      color: #1a202c;
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 12px rgba(160, 174, 192, 0.6);
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);
+    }
+
+    /* 🥉 BRONZE BADGE */
+    .badge-bronze {
+      background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%);
+      color: #ffffff;
+      border: 2px solid #ffcc80;
+      box-shadow: 0 4px 12px rgba(160, 82, 45, 0.6);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+  <!-- NAVBAR HEADER -->
+  <header class="bg-blue-600 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">
+        <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
+      </h1>
+      <div class="flex gap-2">
+        <button onclick="switchTab('ceklis')" id="btn-ceklis" class="px-4 py-2 rounded-lg text-sm font-medium transition bg-blue-700 hover:bg-blue-800">
+          <i class="fa-solid fa-clipboard-check mr-1"></i> Form Ceklis
+        </button>
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-lg text-sm font-medium transition bg-white text-blue-600 shadow font-bold">
+          <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard & Grade
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KONTEN UTAMA DASHBOARD -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    
+    <!-- HEADER DASHBOARD & FILTER AREA -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          📊 Dashboard Performance & Grade
+        </h2>
+        <p class="text-sm text-slate-500">Ringkasan hasil monitoring audit cabang terkini.</p>
+      </div>
+
+      <!-- FILTER CONTROLS -->
+      <div class="flex flex-wrap items-center gap-3">
+        <button onclick="loadDashboardData()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm text-slate-700 transition flex items-center gap-1 font-semibold">
+          <i class="fa-solid fa-rotate"></i> Reload
+        </button>
+        
+        <!-- FILTER GRADE -->
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Grade:</label>
+          <select id="filterGrade" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="ALL">Semua Grade</option>
+            <option value="PLATINUM">💎 Platinum</option>
+            <option value="GOLD">🥇 Gold</option>
+            <option value="SILVER">🥈 Silver</option>
+            <option value="BRONZE">🥉 Bronze</option>
+          </select>
+        </div>
+
+        <!-- FILTER CABANG -->
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
+          <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="ALL">Semua Cabang</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARDS SUMMARY (KPIS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="kpiContainer">
+      <!-- KPI CARDS AKAN DI-RENDER DINAMIS OLEH JAVASCRIPT -->
+    </div>
+
+    <!-- KETENTUAN GRADE (KRITERIA) -->
+    <div class="bg-blue-50/60 border border-blue-200 rounded-xl p-4 mb-6">
+      <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-3 flex items-center gap-1">
+        <i class="fa-solid fa-circle-info"></i> Kriteria Grade Finalisasi Dealer (Mandatory Priority):
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+          <span class="badge-base badge-bronze !text-xs !py-1 !px-2.5">🥉 Bronze</span>
+          <span class="text-slate-600 font-medium">Belum memenuhi kriteria priority minimal</span>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+          <span class="badge-base badge-silver !text-xs !py-1 !px-2.5">🥈 Silver</span>
+          <span class="text-slate-600 font-medium">Mandatory <b>SGP</b> 100% Exist Good</span>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+          <span class="badge-base badge-gold !text-xs !py-1 !px-2.5">🥇 Gold</span>
+          <span class="text-slate-600 font-medium">Mandatory <b>SGP & GP</b> 100% Exist Good</span>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+          <span class="badge-base badge-platinum !text-xs !py-1 !px-2.5">💎 Platinum</span>
+          <span class="text-slate-600 font-medium">Mandatory <b>SGP, GP & P</b> 100% Exist Good</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABEL DETAIL PENCAPAIAN CABANG -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <h3 class="font-bold text-slate-700 text-base">Detail Pencapaian Cabang</h3>
+        <span id="branchCountBadge" class="text-xs bg-slate-200 text-slate-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider">
+            <tr>
+              <th class="py-4 px-5">Cabang</th>
+              <th class="py-4 px-5">Progress</th>
+              <th class="py-4 px-5">Score Compliance</th>
+              <th class="py-4 px-5 text-center">Grade Final</th>
+            </tr>
+          </thead>
+          <tbody id="branchTableBody" class="divide-y divide-slate-100">
+            <!-- ROWS AKAN DI-RENDER DISINI -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwL8fssAEfYxMchqCb9450jqff6aU4-mR7I-fV28TwWl_1fjYonhcCkYpFxKSQL8-TbyQ/exec";
+
+    let rawDashboardData = null;
+
+    async function loadDashboardData() {
+      try {
+        const response = await fetch(`${API_URL}?action=getDashboardData`);
+        const result = await response.json();
+        
+        if (result.status === "success") {
+          rawDashboardData = result.data;
+          populateBranchDropdown(rawDashboardData.branches);
+          renderDashboard();
+        }
+      } catch (err) {
+        console.error("Gagal load data dashboard:", err);
+      }
+    }
+
+    function populateBranchDropdown(branches) {
+      const select = document.getElementById("filterCabang");
+      select.innerHTML = '<option value="ALL">Semua Cabang</option>';
+      branches.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b.nama;
+        opt.textContent = b.nama;
+        select.appendChild(opt);
+      });
+    }
+
+    // UTILS FORMAT BADGE GRADE MEMAKAI UKURAN LEBIH BESAR
+    function getGradeBadgeHTML(grade) {
+      const g = (grade || "BRONZE").toUpperCase();
+      if (g === "PLATINUM") {
+        return `<span class="badge-base badge-platinum"><i class="fa-solid fa-gem text-lg"></i> PLATINUM</span>`;
+      } else if (g === "GOLD") {
+        return `<span class="badge-base badge-gold"><i class="fa-solid fa-crown text-lg"></i> GOLD</span>`;
+      } else if (g === "SILVER") {
+        return `<span class="badge-base badge-silver"><i class="fa-solid fa-medal text-lg"></i> SILVER</span>`;
+      } else {
+        return `<span class="badge-base badge-bronze"><i class="fa-solid fa-award text-lg"></i> BRONZE</span>`;
+      }
+    }
+
+    function renderDashboard() {
+      if (!rawDashboardData) return;
+
+      const selectedCabang = document.getElementById("filterCabang").value;
+      const selectedGrade = document.getElementById("filterGrade").value;
+
+      let branches = [...rawDashboardData.branches];
+
+      if (selectedCabang !== "ALL") {
+        branches = branches.filter(b => b.nama === selectedCabang);
+      }
+
+      if (selectedGrade !== "ALL") {
+        branches = branches.filter(b => b.grade.toUpperCase() === selectedGrade);
+      }
+
+      const gradeWeight = { "PLATINUM": 4, "GOLD": 3, "SILVER": 2, "BRONZE": 1 };
+      
+      branches.sort((a, b) => {
+        const rankA = gradeWeight[a.grade.toUpperCase()] || 0;
+        const rankB = gradeWeight[b.grade.toUpperCase()] || 0;
+
+        if (rankB !== rankA) return rankB - rankA;
+        if (b.progress !== a.progress) return b.progress - a.progress;
+        return b.score - a.score;
+      });
+
+      renderKPIs(selectedCabang, branches);
+      renderTable(branches);
+    }
+
+    function renderKPIs(selectedCabang, filteredBranches) {
+      const container = document.getElementById("kpiContainer");
+
+      if (selectedCabang === "ALL") {
+        const totalCabang = rawDashboardData.totalCabang || filteredBranches.length;
+        const avgScore = rawDashboardData.avgScore || 0;
+        const completedSections = rawDashboardData.completedSections || 0;
+
+        container.innerHTML = `
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-blue-600 uppercase">Total Cabang</span>
+            <div class="text-3xl font-extrabold text-slate-800 mt-2">${totalCabang}</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-emerald-600 uppercase">AVG Compliance</span>
+            <div class="text-3xl font-extrabold text-emerald-600 mt-2">${avgScore}%</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-amber-600 uppercase">Section Selesai</span>
+            <div class="text-3xl font-extrabold text-amber-600 mt-2">${completedSections}</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-purple-600 uppercase">Status Cabang Terdaftar</span>
+            <div class="text-3xl font-extrabold text-purple-600 mt-2">${filteredBranches.length} <span class="text-xs font-normal text-slate-500">Cabang</span></div>
+          </div>
+        `;
+      } else {
+        const target = filteredBranches[0] || { progress: 0, score: 0, grade: "BRONZE" };
+        
+        container.innerHTML = `
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-blue-600 uppercase">Cabang Dipilih</span>
+            <div class="text-2xl font-extrabold text-slate-800 mt-2 truncate">${selectedCabang}</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-emerald-600 uppercase">Progress Audit</span>
+            <div class="text-3xl font-extrabold text-emerald-600 mt-2">${target.progress}%</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-amber-600 uppercase">Score Compliance</span>
+            <div class="text-3xl font-extrabold text-amber-600 mt-2">${target.score}%</div>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-blue-200 bg-blue-50/40 shadow-sm">
+            <span class="text-xs font-bold text-purple-700 uppercase">Grade Cabang Ini</span>
+            <div class="mt-2.5">${getGradeBadgeHTML(target.grade)}</div>
+          </div>
+        `;
+      }
+    }
+
+    function renderTable(branches) {
+      const tbody = document.getElementById("branchTableBody");
+      const countBadge = document.getElementById("branchCountBadge");
+      
+      countBadge.textContent = `Total: ${branches.length} Cabang`;
+      tbody.innerHTML = "";
+
+      if (branches.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="py-8 text-center text-slate-400">Tidak ada cabang yang sesuai dengan filter.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      branches.forEach(b => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="py-4 px-5 font-bold text-slate-800 text-base">${b.nama}</td>
+          <td class="py-4 px-5">
+            <div class="flex items-center gap-2">
+              <div class="w-20 bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${b.progress}%"></div>
+              </div>
+              <span class="font-bold text-xs text-slate-700">${b.progress}%</span>
+            </div>
+          </td>
+          <td class="py-4 px-5 font-bold text-slate-800 text-base">${b.score}%</td>
+          <td class="py-4 px-5 text-center">${getGradeBadgeHTML(b.grade)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadDashboardData);
   </script>
+
 </body>
 </html>
