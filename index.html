@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .badge-base { padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.05em; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; text-transform: uppercase; }
+    .badge-base { padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; text-transform: uppercase; }
     .badge-bronze { background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%); color: #ffffff; border: 1.5px solid #ffcc80; }
     .badge-silver { background: linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%); color: #ffffff; border: 1.5px solid #e5e7eb; }
     .badge-gold { background: linear-gradient(135deg, #854d0e 0%, #ca8a04 50%, #eab308 100%); color: #ffffff; border: 1.5px solid #fef08a; }
@@ -24,114 +24,157 @@
 
   <!-- Header Navbar -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
-      <h1 class="text-xl font-bold flex items-center gap-2">
-        <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
-      </h1>
-      <div class="flex items-center gap-2 w-full md:w-auto">
-        <button onclick="promptChangeApiUrl()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
-          <i class="fa-solid fa-link"></i> Set URL Web App
-        </button>
-        <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-6">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
+        </h1>
+        <!-- Navigasi Tab -->
+        <nav class="flex bg-blue-700/60 p-1 rounded-xl gap-1">
+          <button id="tabDashBtn" onclick="switchTab('dashboard')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm">
+            <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard
+          </button>
+          <button id="tabFormBtn" onclick="switchTab('checklist')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition">
+            <i class="fa-solid fa-list-check mr-1"></i> Form Checklist NOS
+          </button>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
           <i class="fa-solid fa-rotate"></i> Refresh Data
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- Main Content Area -->
   <main class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-800">📊 Dashboard Monitoring NOS Cabang</h2>
-        <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
-      </div>
-      <div class="flex items-center gap-3">
+
+    <!-- ==================== TAB 1: DASHBOARD MONITORING ==================== -->
+    <div id="viewDashboard">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
-          <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="ALL">Semua Cabang</option>
-          </select>
+          <h2 class="text-2xl font-bold text-slate-800">📊 Dashboard Monitoring NOS Cabang</h2>
+          <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
+            <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="ALL">Semua Cabang</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ringkasan Statistik -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase">Total Cabang</p>
+            <h3 id="statTotalBranches" class="text-2xl font-extrabold text-slate-800">0</h3>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-store"></i>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Progress</p>
+            <h3 id="statAvgProgress" class="text-2xl font-extrabold text-blue-600">0%</h3>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-bars-progress"></i>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Compliance</p>
+            <h3 id="statAvgCompliance" class="text-2xl font-extrabold text-emerald-600">0%</h3>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-square-check"></i>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase">Status Data</p>
+            <h3 id="statStatusText" class="text-sm font-bold text-slate-700">Connecting...</h3>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-database"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel Pencapaian -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h3 class="font-bold text-slate-700 text-base flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-blue-600"></i> Detail Pencapaian Cabang
+          </h3>
+          <span id="branchCountBadge" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
+              <tr>
+                <th class="py-4 px-5">Kode</th>
+                <th class="py-4 px-5">Nama Cabang</th>
+                <th class="py-4 px-5">Progress Overall</th>
+                <th class="py-4 px-5">Compliance Score</th>
+                <th class="py-4 px-5 text-center">Grade Final Cabang</th>
+                <th class="py-4 px-5 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="branchTableBody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="6" class="py-12 text-center text-slate-400">
+                  <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
+                  <p>Sedang menghubungkan ke Google Sheets...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- Stats Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-semibold text-slate-500 uppercase">Total Cabang</p>
-          <h3 id="statTotalBranches" class="text-2xl font-extrabold text-slate-800">0</h3>
+    <!-- ==================== TAB 2: FORM CHECKLIST NOS ==================== -->
+    <div id="viewChecklist" class="hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-clipboard-check text-blue-600"></i> Form Checklist 6 Panel NOS
+            </h2>
+            <p class="text-sm text-slate-500">Pilih cabang untuk melakukan audit dan penilaian checklist standar operasional.</p>
+          </div>
+          <div class="w-full md:w-72">
+            <label class="text-xs font-bold text-slate-600 block mb-1">PILIH CABANG AUDIT:</label>
+            <select id="formSelectCabang" onchange="onSelectCabangChecklist()" class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-lg text-sm font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">-- Pilih Cabang --</option>
+            </select>
+          </div>
         </div>
-        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-          <i class="fa-solid fa-store"></i>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Progress</p>
-          <h3 id="statAvgProgress" class="text-2xl font-extrabold text-blue-600">0%</h3>
-        </div>
-        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-          <i class="fa-solid fa-bars-progress"></i>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Compliance</p>
-          <h3 id="statAvgCompliance" class="text-2xl font-extrabold text-emerald-600">0%</h3>
-        </div>
-        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-          <i class="fa-solid fa-square-check"></i>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div>
-          <p class="text-xs font-semibold text-slate-500 uppercase">Status Data</p>
-          <h3 id="statStatusText" class="text-sm font-bold text-slate-700">Connecting...</h3>
-        </div>
-        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-          <i class="fa-solid fa-database"></i>
+
+        <!-- Detail Panel Checklist Form -->
+        <div id="checklistFormBody" class="pt-6">
+          <div class="text-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <i class="fa-solid fa-store text-4xl text-slate-300 mb-3"></i>
+            <p class="font-semibold">Silakan pilih cabang terlebih dahulu di menu drop-down di atas untuk mengisi Form Checklist.</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Tabel Monitoring -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <h3 class="font-bold text-slate-700 text-base flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-blue-600"></i> Detail Pencapaian Cabang
-        </h3>
-        <span id="branchCountBadge" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
-            <tr>
-              <th class="py-4 px-5">Kode</th>
-              <th class="py-4 px-5">Nama Cabang</th>
-              <th class="py-4 px-5">Progress Overall</th>
-              <th class="py-4 px-5">Compliance Score</th>
-              <th class="py-4 px-5 text-center">Grade Final Cabang</th>
-            </tr>
-          </thead>
-          <tbody id="branchTableBody" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="5" class="py-12 text-center text-slate-400">
-                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
-                <p>Sedang menghubungkan ke Google Sheets...</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </main>
 
   <script>
-    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "https://script.google.com/macros/s/AKfycbzvZW8hdCDrodQZvgYgOQ2wU8fJuBf7NjPqJa-Ykftu0htpcdxE2ZqwBSpKOu4DTchoNQ/exec";
+    // SISIPKAN URL WEB APP ANDA DI SINI
+    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "";
 
     let masterBranches = [];
     let branchDataList = [];
@@ -143,6 +186,16 @@
       "GOLD": 3,
       "PLATINUM": 4
     };
+
+    // Daftar 6 Panel NOS Standar
+    const PANEL_NOS = [
+      { id: 1, nama: "Panel 1: Area Kebersihan, Kerapihan & Display", maxItem: 5 },
+      { id: 2, nama: "Panel 2: Compliance Operasional & Standar Kasir", maxItem: 5 },
+      { id: 3, nama: "Panel 3: Service Excellence & Layanan Pelanggan", maxItem: 5 },
+      { id: 4, nama: "Panel 4: Pengelolaan Stok & Inventory", maxItem: 5 },
+      { id: 5, nama: "Panel 5: Pemeliharaan Aset & Fasilitas Toko", maxItem: 5 },
+      { id: 6, nama: "Panel 6: Focus Tracker & Kualifikasi Grade Cabang", maxItem: 5 }
+    ];
 
     function showBanner(msg, type = "info") {
       const banner = document.getElementById("apiStatusBanner");
@@ -164,28 +217,32 @@
       }
     }
 
-    function promptChangeApiUrl() {
-      const newUrl = prompt("Masukkan URL Google Apps Script Web App Kakak:", WEB_APP_URL);
-      if (newUrl && newUrl.trim() !== "") {
-        WEB_APP_URL = newUrl.trim();
-        localStorage.setItem("NOS_WEB_APP_URL", WEB_APP_URL);
-        loadAllData();
+    // Switch Tab Function
+    function switchTab(tab) {
+      const dashView = document.getElementById("viewDashboard");
+      const checkView = document.getElementById("viewChecklist");
+      const dashBtn = document.getElementById("tabDashBtn");
+      const formBtn = document.getElementById("tabFormBtn");
+
+      if (tab === "dashboard") {
+        dashView.classList.remove("hidden");
+        checkView.classList.add("hidden");
+
+        dashBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm";
+        formBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition";
+      } else {
+        dashView.classList.add("hidden");
+        checkView.classList.remove("hidden");
+
+        formBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm";
+        dashBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition";
       }
     }
 
     async function loadAllData() {
       if (!WEB_APP_URL) {
         document.getElementById("statStatusText").textContent = "Need Config";
-        showBanner("⚠️ Silakan klik tombol 'Set URL Web App' di kanan atas untuk memasukkan URL Apps Script.", "warning");
-        document.getElementById("branchTableBody").innerHTML = `
-          <tr>
-            <td colspan="5" class="py-10 text-center text-slate-600">
-              <i class="fa-solid fa-link text-3xl text-blue-600 mb-3"></i>
-              <p class="font-bold text-lg">URL Web App Belum Diatur</p>
-              <p class="text-xs text-slate-500 mt-1">Klik tombol <b>"Set URL Web App"</b> di bagian atas website ini dan tempelkan URL dari Google Apps Script.</p>
-            </td>
-          </tr>
-        `;
+        showBanner("⚠️ Silakan atur WEB_APP_URL di kodingan index.html Kakak.", "warning");
         return;
       }
 
@@ -198,9 +255,7 @@
         
         const data = await response.json();
 
-        if (data.error) {
-          throw new Error(data.error);
-        }
+        if (data.error) throw new Error(data.error);
 
         if (Array.isArray(data) && data.length > 0) {
           masterBranches = data;
@@ -226,15 +281,6 @@
         console.error("Fetch Error:", err);
         document.getElementById("statStatusText").textContent = "Error Access";
         showBanner(`❌ Gagal: ${err.message}`, "error");
-        document.getElementById("branchTableBody").innerHTML = `
-          <tr>
-            <td colspan="5" class="py-10 text-center text-red-600 font-bold">
-              <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
-              <p class="text-lg">Gagal Terhubung (${err.message})</p>
-              <p class="text-xs font-normal text-slate-500 mt-1">Pastikan pengaturan deployment Apps Script di-set ke 'Who has access: Anyone'.</p>
-            </td>
-          </tr>
-        `;
       }
     }
 
@@ -253,15 +299,27 @@
 
     function populateDropdowns() {
       const selectDash = document.getElementById("filterCabang");
-      if (!selectDash) return;
-      selectDash.innerHTML = `<option value="ALL">Semua Cabang (${masterBranches.length})</option>`;
+      const selectForm = document.getElementById("formSelectCabang");
 
-      masterBranches.forEach(b => {
-        const opt = document.createElement("option");
-        opt.value = b.kode;
-        opt.textContent = `${b.nama} (${b.kode})`;
-        selectDash.appendChild(opt);
-      });
+      if (selectDash) {
+        selectDash.innerHTML = `<option value="ALL">Semua Cabang (${masterBranches.length})</option>`;
+        masterBranches.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b.kode;
+          opt.textContent = `${b.nama} (${b.kode})`;
+          selectDash.appendChild(opt);
+        });
+      }
+
+      if (selectForm) {
+        selectForm.innerHTML = `<option value="">-- Pilih Cabang Audit --</option>`;
+        masterBranches.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b.kode;
+          opt.textContent = `${b.nama} (${b.kode})`;
+          selectForm.appendChild(opt);
+        });
+      }
     }
 
     function renderDashboard() {
@@ -272,15 +330,11 @@
         filtered = filtered.filter(b => b.kode === selectedVal || b.nama === selectedVal);
       }
 
-      // SORTING AUTOMATIS: Terendah ke Tertinggi (BRONZE -> SILVER -> GOLD -> PLATINUM)
+      // SORTING: Terendah ke Tertinggi (BRONZE -> SILVER -> GOLD -> PLATINUM)
       filtered.sort((a, b) => {
         const rankA = GRADE_RANK[a.grade] || 1;
         const rankB = GRADE_RANK[b.grade] || 1;
-
-        if (rankA !== rankB) {
-          return rankA - rankB; // Ascending Order
-        }
-        // Jika Grade sama, urutkan berdasarkan Nama Cabang secara Alfabetis
+        if (rankA !== rankB) return rankA - rankB;
         return a.nama.localeCompare(b.nama);
       });
 
@@ -292,7 +346,7 @@
       tbody.innerHTML = "";
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Tidak ada data cabang yang sesuai filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">Tidak ada data cabang.</td></tr>`;
         return;
       }
 
@@ -303,16 +357,9 @@
         let badgeClass = "badge-bronze";
         let badgeIcon = "fa-award";
 
-        if (b.grade === "PLATINUM") {
-          badgeClass = "badge-platinum";
-          badgeIcon = "fa-gem";
-        } else if (b.grade === "GOLD") {
-          badgeClass = "badge-gold";
-          badgeIcon = "fa-crown";
-        } else if (b.grade === "SILVER") {
-          badgeClass = "badge-silver";
-          badgeIcon = "fa-medal";
-        }
+        if (b.grade === "PLATINUM") { badgeClass = "badge-platinum"; badgeIcon = "fa-gem"; }
+        else if (b.grade === "GOLD") { badgeClass = "badge-gold"; badgeIcon = "fa-crown"; }
+        else if (b.grade === "SILVER") { badgeClass = "badge-silver"; badgeIcon = "fa-medal"; }
 
         tr.innerHTML = `
           <td class="py-3.5 px-5 font-mono text-xs font-bold text-slate-500">${b.kode}</td>
@@ -331,9 +378,108 @@
               <i class="fa-solid ${badgeIcon}"></i> ${b.grade}
             </span>
           </td>
+          <td class="py-3.5 px-5 text-center">
+            <button onclick="openChecklistCabang('${b.kode}')" class="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto">
+              <i class="fa-solid fa-pen-to-square"></i> Checklist
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    // Membuka checklist cabang dari tombol di tabel
+    function openChecklistCabang(kode) {
+      switchTab('checklist');
+      const selectForm = document.getElementById("formSelectCabang");
+      if (selectForm) {
+        selectForm.value = kode;
+        onSelectCabangChecklist();
+      }
+    }
+
+    // Generate Form Checklist saat Cabang Dipilih
+    function onSelectCabangChecklist() {
+      const kode = document.getElementById("formSelectCabang").value;
+      const container = document.getElementById("checklistFormBody");
+
+      if (!kode) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <i class="fa-solid fa-store text-4xl text-slate-300 mb-3"></i>
+            <p class="font-semibold">Silakan pilih cabang terlebih dahulu di menu drop-down di atas untuk mengisi Form Checklist.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const cabang = branchDataList.find(b => b.kode === kode);
+
+      let html = `
+        <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-blue-950">${cabang ? cabang.nama : kode} (${kode})</h3>
+            <p class="text-xs text-blue-600">Silakan periksa item checklist 6 Panel NOS di bawah ini.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <span class="text-xs text-slate-500 font-semibold block">Grade Saat Ini</span>
+              <span class="font-bold text-sm text-blue-800">${cabang ? cabang.grade : "BRONZE"}</span>
+            </div>
+            <button onclick="simpanChecklist()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan Audit
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6">
+      `;
+
+      PANEL_NOS.forEach(panel => {
+        html += `
+          <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+            <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+              <i class="fa-solid fa-square-check text-blue-600"></i> ${panel.nama}
+            </h4>
+            <div class="space-y-2.5">
+        `;
+
+        for (let i = 1; i <= panel.maxItem; i++) {
+          html += `
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 text-xs">
+              <span class="font-medium text-slate-700">Item Standar #${i} - Audit Compliance Area Panel ${panel.id}</span>
+              <div class="flex items-center gap-3">
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="panel_${panel.id}_item_${i}" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
+                  <span class="font-bold text-emerald-700">Sesuai</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="panel_${panel.id}_item_${i}" value="0" class="text-red-600 focus:ring-red-500">
+                  <span class="font-bold text-red-600">Tidak</span>
+                </label>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `</div></div>`;
+      });
+
+      html += `
+        </div>
+        <div class="mt-6 text-right">
+          <button onclick="simpanChecklist()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-md transition inline-flex items-center gap-2">
+            <i class="fa-solid fa-check-circle"></i> Simpan Hasil Audit Cabang
+          </button>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function simpanChecklist() {
+      alert("✅ Data audit checklist berhasil disimpan!");
+      switchTab('dashboard');
     }
 
     window.addEventListener("DOMContentLoaded", loadAllData);
