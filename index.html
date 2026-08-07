@@ -15,8 +15,8 @@
 
   <!-- Banner Status -->
   <div id="apiStatusBanner" class="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
-    <span id="apiStatusText">⏳ Membaca data cabang...</span>
-    <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Refresh</button>
+    <span id="apiStatusText">⏳ Memuat data cabang...</span>
+    <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Refresh Data</button>
   </div>
 
   <!-- Header -->
@@ -65,7 +65,7 @@
           </thead>
           <tbody id="branchTableBody" class="divide-y divide-slate-100">
             <tr>
-              <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data cabang...</td>
+              <td colspan="4" class="py-8 text-center text-slate-400">Sedang memuat data 119 cabang dari Google Sheets...</td>
             </tr>
           </tbody>
         </table>
@@ -75,17 +75,7 @@
 
   <script>
     const SPREADSHEET_ID = "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
-
-    // 💡 DATA STANDBY (Sangat berguna saat presentasi jika koneksi Google diblokir jaringan)
-    // Kakak bisa sesuaikan daftar nama/kode cabang di bawah ini sesuai cabang asli Kakak
-    const DEFAULT_STANDBY_BRANCHES = [
-      { kode: "CBG01", nama: "Cabang Ambon" },
-      { kode: "CBG02", nama: "Cabang Ternate" },
-      { kode: "CBG03", nama: "Cabang Kupang" },
-      { kode: "CBG04", nama: "Cabang Mataram" },
-      { kode: "CBG05", nama: "Cabang Jayapura" },
-      { kode: "CBG06", nama: "Cabang Sorong" }
-    ];
+    const SHEET_NAME = "Master_Cabang"; // Mengunci ke Tab Master_Cabang
 
     let masterBranches = [];
     let branchDataList = [];
@@ -107,12 +97,13 @@
     }
 
     async function loadAllData() {
-      showStatusBanner("⏳ Memuat data cabang dari Google Sheets...", "info");
+      showStatusBanner("⏳ Memuat data cabang dari tab Master_Cabang...", "info");
 
-      // OPSI 1: Coba via OpenSheet Proxy (Bypass CORS 100%)
       try {
-        const res = await fetch(`https://opensheet.elk.sh/${SPREADSHEET_ID}/1`);
-        if (!res.ok) throw new Error("Fetch OpenSheet Gagal");
+        const fetchUrl = `https://opensheet.elk.sh/${SPREADSHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error("Gagal mengambil data dari tab Master_Cabang.");
+        
         const data = await res.json();
 
         if (Array.isArray(data) && data.length > 0) {
@@ -125,25 +116,31 @@
             const valKode = row[kKode] ? String(row[kKode]).trim() : "";
             const valNama = row[kNama] ? String(row[kNama]).trim() : valKode;
 
-            if (valKode && valKode.toLowerCase() !== "kode") {
+            if (valKode && valKode.toLowerCase() !== "kode" && valKode.toLowerCase() !== "kode_cabang") {
               masterBranches.push({ kode: valKode, nama: valNama || valKode });
             }
           });
 
           if (masterBranches.length > 0) {
             processBranchData(masterBranches);
-            showStatusBanner("✅ Live Data Berhasil Dimuat!", "success");
+            showStatusBanner(`✅ Berhasil memuat ${masterBranches.length} cabang dari Google Sheets!`, "success");
             return;
           }
         }
-      } catch (e) {
-        console.warn("Opsi 1 gagal, mencoba fallback...");
-      }
+        throw new Error("Data di tab Master_Cabang kosong.");
 
-      // OPSI 2: Fallback ke Standby Data (Anti-Gagal untuk Sosialisasi)
-      console.warn("Menggunakan Data Standby untuk menjamin kelancaran tampilan.");
-      processBranchData(DEFAULT_STANDBY_BRANCHES);
-      showStatusBanner("⚡ Menampilkan Data Monitoring Cabang", "success");
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        showStatusBanner("❌ " + err.message, "error");
+        document.getElementById("branchTableBody").innerHTML = `
+          <tr>
+            <td colspan="4" class="py-8 text-center text-red-500 font-bold">
+              ❌ ${err.message}<br>
+              <span class="text-xs font-normal text-slate-500">Pastikan nama tab di Google Sheets persis "Master_Cabang" dan baris 1 adalah Header.</span>
+            </td>
+          </tr>
+        `;
+      }
     }
 
     function processBranchData(branches) {
