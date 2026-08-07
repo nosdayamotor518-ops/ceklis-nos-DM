@@ -17,18 +17,21 @@
 
   <!-- Banner Status API -->
   <div id="apiStatusBanner" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
-    <span id="apiStatusText">⏳ Memuat data 119 cabang dari Google Sheets...</span>
+    <span id="apiStatusText">⏳ Memuat data cabang dari Google Sheets...</span>
     <button onclick="loadAllData()" class="underline bg-blue-700 px-2.5 py-1 rounded hover:bg-blue-800 transition">Refresh Data</button>
   </div>
 
   <!-- Header Navbar -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
       <h1 class="text-xl font-bold flex items-center gap-2">
         <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
       </h1>
-      <div class="flex items-center gap-2">
-        <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-sm">
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <button onclick="promptChangeSheetId()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+          <i class="fa-solid fa-key"></i> Set Sheet ID
+        </button>
+        <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-sm">
           <i class="fa-solid fa-rotate"></i> Refresh Data
         </button>
       </div>
@@ -117,7 +120,7 @@
             <tr>
               <td colspan="5" class="py-12 text-center text-slate-400">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
-                <p>Sedang menghubungkan ke Google Sheets (Tab Master_Cabang)...</p>
+                <p>Sedang menghubungkan ke Google Sheets...</p>
               </td>
             </tr>
           </tbody>
@@ -127,7 +130,8 @@
   </main>
 
   <script>
-    const SPREADSHEET_ID = "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
+    let SPREADSHEET_ID = localStorage.getItem("NOS_SHEET_ID") || "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
+    const SHEET_NAME = "Master_Cabang";
 
     let masterBranches = [];
     let branchDataList = [];
@@ -152,156 +156,136 @@
       }
     }
 
-    // Mengambil data dari Google Sheets via Official GViz API Native
-    async function fetchGVizData(sheetName) {
-      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&tqx=out:json`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}: Gagal mengakses Google Sheets`);
-      const text = await response.text();
-
-      const jsonStart = text.indexOf("{");
-      const jsonEnd = text.lastIndexOf("}");
-      if (jsonStart === -1 || jsonEnd === -1) {
-        throw new Error("Respon Google Sheets tidak valid.");
+    function promptChangeSheetId() {
+      const newId = prompt("Masukkan Spreadsheet ID Google Sheets Kakak:", SPREADSHEET_ID);
+      if (newId && newId.trim() !== "") {
+        SPREADSHEET_ID = newId.trim();
+        localStorage.setItem("NOS_SHEET_ID", SPREADSHEET_ID);
+        loadAllData();
       }
-
-      const parsed = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
-      if (parsed.status === "error") {
-        throw new Error(parsed.errors?.[0]?.detailed_message || "Error saat membaca Sheet");
-      }
-
-      return parsed.table;
     }
 
-    function getCellValue(cell) {
-      if (!cell) return "";
-      if (cell.v !== null && cell.v !== undefined) return String(cell.v).trim();
-      if (cell.f !== null && cell.f !== undefined) return String(cell.f).trim();
-      return "";
+    // Helper Parser CSV
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/);
+      const rows = [];
+      for (let line of lines) {
+        if (!line.trim()) continue;
+        const row = [];
+        let insideQuote = false;
+        let entry = '';
+        for (let i = 0; i < line.length; i++) {
+          let char = line[i];
+          if (char === '"') {
+            insideQuote = !insideQuote;
+          } else if (char === ',' && !insideQuote) {
+            row.push(entry.trim().replace(/^"|"$/g, ''));
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        row.push(entry.trim().replace(/^"|"$/g, ''));
+        rows.push(row);
+      }
+      return rows;
     }
 
     async function loadAllData() {
-      showBanner("⏳ Memuat data cabang dari tab Master_Cabang...", "info");
+      showBanner("⏳ Memuat data cabang dari Google Sheets...", "info");
       document.getElementById("statStatusText").textContent = "Syncing...";
 
+      let fetchedBranches = [];
+      let success = false;
+
+      // Jalur 1: Try GViz CSV Export (Paling Stabil)
       try {
-        // Step 1: Tarik data dari tab Master_Cabang
-        let tableData = null;
-        try {
-          tableData = await fetchGVizData("Master_Cabang");
-        } catch (e) {
-          console.warn("Gagal via nama Master_Cabang, mencoba sheet default...", e);
-          tableData = await fetchGVizData("");
-        }
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const res = await fetch(csvUrl);
+        if (res.ok) {
+          const csvText = await res.text();
+          const rows = parseCSV(csvText);
+          if (rows.length > 0) {
+            let colKode = 0, colNama = 1, startRow = 0;
+            if (rows[0][0].toLowerCase().includes("kode") || rows[0][1].toLowerCase().includes("nama")) {
+              startRow = 1;
+              rows[0].forEach((h, idx) => {
+                if (h.toLowerCase().includes("kode")) colKode = idx;
+                if (h.toLowerCase().includes("nama") || h.toLowerCase().includes("cabang")) colNama = idx;
+              });
+            }
 
-        if (!tableData || !tableData.rows || tableData.rows.length === 0) {
-          throw new Error("Tab Master_Cabang kosong atau tidak ditemukan.");
-        }
-
-        let colKodeIdx = 0;
-        let colNamaIdx = 1;
-        let startRowIdx = 0;
-
-        // Otomatis deteksi indeks kolom Kode & Nama
-        if (tableData.cols && tableData.cols.length > 0) {
-          tableData.cols.forEach((col, idx) => {
-            const label = (col.label || "").toLowerCase();
-            if (label.includes("kode")) colKodeIdx = idx;
-            if (label.includes("nama") || label.includes("cabang")) colNamaIdx = idx;
-          });
-        }
-
-        // Cek jika baris 0 adalah Header
-        const firstRowCells = tableData.rows[0]?.c || [];
-        const firstRowVal0 = getCellValue(firstRowCells[0]).toLowerCase();
-        const firstRowVal1 = getCellValue(firstRowCells[1]).toLowerCase();
-
-        if (firstRowVal0.includes("kode") || firstRowVal1.includes("nama") || firstRowVal1.includes("cabang")) {
-          startRowIdx = 1;
-          firstRowCells.forEach((cell, idx) => {
-            const val = getCellValue(cell).toLowerCase();
-            if (val.includes("kode")) colKodeIdx = idx;
-            if (val.includes("nama") || val.includes("cabang")) colNamaIdx = idx;
-          });
-        }
-
-        masterBranches = [];
-        for (let i = startRowIdx; i < tableData.rows.length; i++) {
-          const rowCells = tableData.rows[i]?.c || [];
-          const valKode = getCellValue(rowCells[colKodeIdx]);
-          const valNama = getCellValue(rowCells[colNamaIdx]) || valKode;
-
-          if (valKode && valKode.toLowerCase() !== "kode" && valKode.toLowerCase() !== "kode_cabang") {
-            masterBranches.push({
-              kode: valKode,
-              nama: valNama
-            });
-          }
-        }
-
-        if (masterBranches.length === 0) {
-          throw new Error("Tidak ada data baris cabang yang valid ditemukan di tab Master_Cabang.");
-        }
-
-        // Step 2: Coba tarik data Responses (jika ada pengisian ceklis)
-        let responseMap = {};
-        try {
-          const respTable = await fetchGVizData("Responses");
-          if (respTable && respTable.rows) {
-            respTable.rows.forEach(r => {
-              const cells = r.c || [];
-              const cKode = getCellValue(cells[1]) || getCellValue(cells[0]);
-              if (cKode) {
-                if (!responseMap[cKode]) responseMap[cKode] = { total: 0, filled: 0, scoreSum: 0 };
-                responseMap[cKode].total += 1;
-                responseMap[cKode].filled += 1;
+            for (let i = startRow; i < rows.length; i++) {
+              const r = rows[i];
+              if (r[colKode] && r[colKode].toLowerCase() !== "kode") {
+                fetchedBranches.push({
+                  kode: r[colKode],
+                  nama: r[colNama] || r[colKode]
+                });
               }
-            });
+            }
+            if (fetchedBranches.length > 0) success = true;
           }
-        } catch (respErr) {
-          console.log("Tab Responses belum terisi/tersedia, menggunakan nilai awal.");
         }
+      } catch (e) { console.log("GViz CSV failed:", e); }
 
-        // Susun data dashboard
-        branchDataList = masterBranches.map(b => {
-          const resp = responseMap[b.kode] || responseMap[b.nama];
-          let progress = 0;
-          let score = 0;
-          if (resp && resp.total > 0) {
-            progress = Math.min(100, Math.round((resp.filled / resp.total) * 100));
-            score = Math.min(100, Math.round(resp.scoreSum / resp.total));
+      // Jalur 2: OpenSheet Backup (Jika GViz terhalang)
+      if (!success) {
+        try {
+          const openUrl = `https://opensheet.elk.sh/${SPREADSHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
+          const res = await fetch(openUrl);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              data.forEach(row => {
+                const keys = Object.keys(row);
+                const kKode = keys.find(k => k.toLowerCase().includes("kode")) || keys[0];
+                const kNama = keys.find(k => k.toLowerCase().includes("nama") || k.toLowerCase().includes("cabang")) || keys[1] || kKode;
+                if (row[kKode]) {
+                  fetchedBranches.push({
+                    kode: String(row[kKode]).trim(),
+                    nama: String(row[kNama] || row[kKode]).trim()
+                  });
+                }
+              });
+              if (fetchedBranches.length > 0) success = true;
+            }
           }
+        } catch (e) { console.log("OpenSheet failed:", e); }
+      }
 
-          let grade = "BRONZE";
-          if (score >= 90) grade = "GOLD";
-          else if (score >= 75) grade = "SILVER";
-
-          return {
-            kode: b.kode,
-            nama: b.nama,
-            progress: progress,
-            score: score,
-            grade: grade
-          };
-        });
+      // Hasil Pengolahan
+      if (success && fetchedBranches.length > 0) {
+        masterBranches = fetchedBranches;
+        branchDataList = masterBranches.map(b => ({
+          kode: b.kode,
+          nama: b.nama,
+          progress: 0,
+          score: 0,
+          grade: "BRONZE"
+        }));
 
         populateDropdowns();
         renderDashboard();
         updateSummaryStats();
 
-        showBanner(`✅ Berhasil memuat ${masterBranches.length} cabang dari Google Sheets!`, "success");
+        showBanner(`✅ Berhasil terhubung! Memuat ${masterBranches.length} cabang.`, "success");
         document.getElementById("statStatusText").textContent = "Connected Live";
-
-      } catch (err) {
-        console.error("Load Data Error:", err);
-        showBanner(`❌ Gagal: ${err.message}`, "error");
-        document.getElementById("statStatusText").textContent = "Error";
+      } else {
+        document.getElementById("statStatusText").textContent = "Error Access";
+        showBanner("❌ Gagal Mengakses Google Sheets. Cek Pengaturan Bagikan (Share).", "error");
         document.getElementById("branchTableBody").innerHTML = `
           <tr>
             <td colspan="5" class="py-10 text-center text-red-600 font-bold">
               <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
-              <p>Gagal Terhubung ke Google Sheets (${err.message})</p>
-              <p class="text-xs font-normal text-slate-500 mt-1">Pastikan Google Sheets diset "Siapa saja yang memiliki link" sebagai Pelihat.</p>
+              <p class="text-lg">Gagal Terhubung ke Google Sheets (HTTP 404)</p>
+              <div class="text-xs font-normal text-slate-600 max-w-lg mx-auto mt-2 bg-red-50 p-3 rounded-lg border border-red-200 text-left space-y-1">
+                <p class="font-bold text-red-800 mb-1">Panduan Memperbaiki:</p>
+                <p>1. Buka file Google Sheets Kakak.</p>
+                <p>2. Klik tombol <b>Bagikan (Share)</b> di kanan atas.</p>
+                <p>3. Ubah <b>Akses umum</b> menjadi <b>"Siapa saja yang memiliki link"</b> (Pelihat).</p>
+                <p>4. Jika ID Sheets berubah, klik tombol <b>"Set Sheet ID"</b> di header atas web ini.</p>
+              </div>
             </td>
           </tr>
         `;
