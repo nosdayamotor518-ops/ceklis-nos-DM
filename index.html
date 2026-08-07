@@ -6,6 +6,8 @@
   <title>Monitoring NOS Cabang</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Library Pembaca CSV Handal & Anti CORS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     .badge-base { padding: 0.5rem 1.25rem; font-size: 0.95rem; font-weight: 900; letter-spacing: 0.08em; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; }
     .badge-bronze { background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%); color: #ffffff; border: 2px solid #ffcc80; }
@@ -13,11 +15,13 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
+  <!-- Banner Status API -->
   <div id="apiStatusBanner" class="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
-    <span id="apiStatusText">⏳ Menghubungkan ke Google Sheets...</span>
+    <span id="apiStatusText">⏳ Membaca data dari Google Sheets...</span>
     <button onclick="loadAllData()" class="underline bg-amber-600 px-2 py-1 rounded hover:bg-amber-700">Coba Lagi</button>
   </div>
 
+  <!-- Header -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-xl font-bold flex items-center gap-2">
@@ -29,6 +33,7 @@
     </div>
   </header>
 
+  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
       <div>
@@ -43,6 +48,7 @@
       </div>
     </div>
 
+    <!-- Tabel Monitoring -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <h3 class="font-bold text-slate-700 text-base">Detail Pencapaian Cabang</h3>
@@ -70,9 +76,11 @@
   </main>
 
   <script>
-    // ID SpreadSheet Google Sheets
+    // ID Google Sheets Kakak
     const SPREADSHEET_ID = "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
-    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
+    
+    // URL CSV Direct Export (Bebas dari Masalah CORS)
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv`;
 
     let masterBranches = [];
     let branchDataList = [];
@@ -87,66 +95,85 @@
       if (!isError) setTimeout(() => banner.classList.add("hidden"), 3000);
     }
 
-    async function loadAllData() {
+    function loadAllData() {
       const banner = document.getElementById("apiStatusBanner");
       const text = document.getElementById("apiStatusText");
       if (banner && text) {
         banner.classList.remove("hidden", "bg-red-600", "bg-emerald-600");
         banner.classList.add("bg-amber-500");
-        text.textContent = "⏳ Membaca data langsung dari Google Sheets...";
+        text.textContent = "⏳ Membaca data Google Sheets...";
       }
 
-      try {
-        const response = await fetch(GVIZ_URL);
-        if (!response.ok) throw new Error("Gagal mengambil data. Pastikan Google Sheets sudah diset 'Anyone with the link'.");
+      // Mengunduh dan mengurai CSV secara real-time
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          try {
+            const rawRows = results.data || [];
+            if (rawRows.length === 0) {
+              throw new Error("Data Google Sheets kosong atau tidak ditemukan.");
+            }
 
-        const responseText = await response.text();
-        
-        // Ekstraksi data JSON dari format Google Visualization
-        const jsonMatch = responseText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/);
-        if (!jsonMatch || !jsonMatch[1]) {
-          throw new Error("Gagal memproses struktur data Google Sheets.");
+            masterBranches = [];
+            rawRows.forEach(row => {
+              // Otomatis mencari kolom Kode dan Nama Cabang
+              const keys = Object.keys(row);
+              const keyKode = keys.find(k => k.toLowerCase().includes("kode")) || keys[0];
+              const keyNama = keys.find(k => k.toLowerCase().includes("nama") || k.toLowerCase().includes("cabang")) || keys[1] || keyKode;
+
+              const valKode = row[keyKode] ? String(row[keyKode]).trim() : "";
+              const valNama = row[keyNama] ? String(row[keyNama]).trim() : valKode;
+
+              if (valKode && valKode.toLowerCase() !== "kode_cabang" && valKode.toLowerCase() !== "kode") {
+                masterBranches.push({
+                  kode: valKode,
+                  nama: valNama || valKode
+                });
+              }
+            });
+
+            if (masterBranches.length === 0) {
+              throw new Error("Format kolom di Google Sheets belum sesuai. Pastikan baris paling atas adalah Header (seperti Kode_Cabang, Nama_Cabang).");
+            }
+
+            branchDataList = masterBranches.map(b => ({
+              nama: b.nama,
+              kode: b.kode,
+              progress: 0,
+              score: 0,
+              grade: "BRONZE"
+            }));
+
+            populateDropdowns();
+            renderDashboard();
+            showStatusBanner("✅ Data Berhasil Dimuat!", false);
+
+          } catch (err) {
+            console.error("CSV Parse Error:", err);
+            showStatusBanner("❌ " + err.message, true);
+            showErrorInTable(err.message);
+          }
+        },
+        error: function(err) {
+          console.error("Download Error:", err);
+          const msg = "Gagal mengambil data. Pastikan Google Sheets sudah diset 'Anyone with the link' dan 'Publikasikan ke web'.";
+          showStatusBanner("❌ " + msg, true);
+          showErrorInTable(msg);
         }
+      });
+    }
 
-        const data = JSON.parse(jsonMatch[1]);
-        if (!data.table || !data.table.rows) {
-          throw new Error("Data Google Sheets kosong.");
-        }
-
-        // Ambil baris data cabang
-        masterBranches = data.table.rows
-          .map(row => {
-            const cellKode = row.c && row.c[0] ? String(row.c[0].v || "").trim() : "";
-            const cellNama = row.c && row.c[1] ? String(row.c[1].v || "").trim() : cellKode;
-            return { kode: cellKode, nama: cellNama || cellKode };
-          })
-          .filter(b => b.kode !== "" && b.kode.toLowerCase() !== "kode_cabang" && b.kode.toLowerCase() !== "kode");
-
-        branchDataList = masterBranches.map(b => ({
-          nama: b.nama,
-          kode: b.kode,
-          progress: 0,
-          score: 0,
-          grade: "BRONZE"
-        }));
-
-        populateDropdowns();
-        renderDashboard();
-        showStatusBanner("✅ Data Berhasil Dimuat!", false);
-
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        showStatusBanner("❌ " + err.message, true);
-
-        document.getElementById("branchTableBody").innerHTML = `
-          <tr>
-            <td colspan="4" class="py-8 text-center text-red-500 font-bold">
-              ❌ Gagal terhubung ke Google Sheets.<br>
-              <span class="text-xs font-normal text-slate-500">${err.message}</span>
-            </td>
-          </tr>
-        `;
-      }
+    function showErrorInTable(msg) {
+      document.getElementById("branchTableBody").innerHTML = `
+        <tr>
+          <td colspan="4" class="py-8 text-center text-red-500 font-bold">
+            ❌ Gagal terhubung ke Google Sheets.<br>
+            <span class="text-xs font-normal text-slate-500">${msg}</span>
+          </td>
+        </tr>
+      `;
     }
 
     function populateDropdowns() {
