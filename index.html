@@ -28,8 +28,8 @@
         <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
       </h1>
       <div class="flex items-center gap-2 w-full md:w-auto">
-        <button onclick="promptChangeSheetId()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
-          <i class="fa-solid fa-key"></i> Set Sheet ID
+        <button onclick="promptChangeApiUrl()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+          <i class="fa-solid fa-link"></i> Set URL Web App
         </button>
         <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-sm">
           <i class="fa-solid fa-rotate"></i> Refresh Data
@@ -130,8 +130,7 @@
   </main>
 
   <script>
-    let SPREADSHEET_ID = localStorage.getItem("NOS_SHEET_ID") || "1xy9RcfJXJSIMoVfMKSQS0YUeF1kVApi7qrVy_Wwd9J0";
-    const SHEET_NAME = "Master_Cabang";
+    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "";
 
     let masterBranches = [];
     let branchDataList = [];
@@ -156,136 +155,74 @@
       }
     }
 
-    function promptChangeSheetId() {
-      const newId = prompt("Masukkan Spreadsheet ID Google Sheets Kakak:", SPREADSHEET_ID);
-      if (newId && newId.trim() !== "") {
-        SPREADSHEET_ID = newId.trim();
-        localStorage.setItem("NOS_SHEET_ID", SPREADSHEET_ID);
+    function promptChangeApiUrl() {
+      const newUrl = prompt("Masukkan URL Google Apps Script Web App Kakak:", WEB_APP_URL);
+      if (newUrl && newUrl.trim() !== "") {
+        WEB_APP_URL = newUrl.trim();
+        localStorage.setItem("NOS_WEB_APP_URL", WEB_APP_URL);
         loadAllData();
       }
     }
 
-    // Helper Parser CSV
-    function parseCSV(text) {
-      const lines = text.split(/\r?\n/);
-      const rows = [];
-      for (let line of lines) {
-        if (!line.trim()) continue;
-        const row = [];
-        let insideQuote = false;
-        let entry = '';
-        for (let i = 0; i < line.length; i++) {
-          let char = line[i];
-          if (char === '"') {
-            insideQuote = !insideQuote;
-          } else if (char === ',' && !insideQuote) {
-            row.push(entry.trim().replace(/^"|"$/g, ''));
-            entry = '';
-          } else {
-            entry += char;
-          }
-        }
-        row.push(entry.trim().replace(/^"|"$/g, ''));
-        rows.push(row);
-      }
-      return rows;
-    }
-
     async function loadAllData() {
-      showBanner("⏳ Memuat data cabang dari Google Sheets...", "info");
+      if (!WEB_APP_URL) {
+        document.getElementById("statStatusText").textContent = "Need Config";
+        showBanner("⚠️ Silakan klik tombol 'Set URL Web App' di kanan atas untuk memasukkan URL Apps Script.", "warning");
+        document.getElementById("branchTableBody").innerHTML = `
+          <tr>
+            <td colspan="5" class="py-10 text-center text-slate-600">
+              <i class="fa-solid fa-link text-3xl text-blue-600 mb-3"></i>
+              <p class="font-bold text-lg">URL Web App Belum Diatur</p>
+              <p class="text-xs text-slate-500 mt-1">Klik tombol <b>"Set URL Web App"</b> di bagian atas website ini dan tempelkan URL dari Google Apps Script.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      showBanner("⏳ Memuat 119 data cabang dari Google Apps Script...", "info");
       document.getElementById("statStatusText").textContent = "Syncing...";
 
-      let fetchedBranches = [];
-      let success = false;
-
-      // Jalur 1: Try GViz CSV Export (Paling Stabil)
       try {
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
-        const res = await fetch(csvUrl);
-        if (res.ok) {
-          const csvText = await res.text();
-          const rows = parseCSV(csvText);
-          if (rows.length > 0) {
-            let colKode = 0, colNama = 1, startRow = 0;
-            if (rows[0][0].toLowerCase().includes("kode") || rows[0][1].toLowerCase().includes("nama")) {
-              startRow = 1;
-              rows[0].forEach((h, idx) => {
-                if (h.toLowerCase().includes("kode")) colKode = idx;
-                if (h.toLowerCase().includes("nama") || h.toLowerCase().includes("cabang")) colNama = idx;
-              });
-            }
+        const response = await fetch(WEB_APP_URL);
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+        
+        const data = await response.json();
 
-            for (let i = startRow; i < rows.length; i++) {
-              const r = rows[i];
-              if (r[colKode] && r[colKode].toLowerCase() !== "kode") {
-                fetchedBranches.push({
-                  kode: r[colKode],
-                  nama: r[colNama] || r[colKode]
-                });
-              }
-            }
-            if (fetchedBranches.length > 0) success = true;
-          }
+        if (data.error) {
+          throw new Error(data.error);
         }
-      } catch (e) { console.log("GViz CSV failed:", e); }
 
-      // Jalur 2: OpenSheet Backup (Jika GViz terhalang)
-      if (!success) {
-        try {
-          const openUrl = `https://opensheet.elk.sh/${SPREADSHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
-          const res = await fetch(openUrl);
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-              data.forEach(row => {
-                const keys = Object.keys(row);
-                const kKode = keys.find(k => k.toLowerCase().includes("kode")) || keys[0];
-                const kNama = keys.find(k => k.toLowerCase().includes("nama") || k.toLowerCase().includes("cabang")) || keys[1] || kKode;
-                if (row[kKode]) {
-                  fetchedBranches.push({
-                    kode: String(row[kKode]).trim(),
-                    nama: String(row[kNama] || row[kKode]).trim()
-                  });
-                }
-              });
-              if (fetchedBranches.length > 0) success = true;
-            }
-          }
-        } catch (e) { console.log("OpenSheet failed:", e); }
-      }
+        if (Array.isArray(data) && data.length > 0) {
+          masterBranches = data;
+          branchDataList = masterBranches.map(b => ({
+            kode: b.kode,
+            nama: b.nama,
+            progress: 0,
+            score: 0,
+            grade: "BRONZE"
+          }));
 
-      // Hasil Pengolahan
-      if (success && fetchedBranches.length > 0) {
-        masterBranches = fetchedBranches;
-        branchDataList = masterBranches.map(b => ({
-          kode: b.kode,
-          nama: b.nama,
-          progress: 0,
-          score: 0,
-          grade: "BRONZE"
-        }));
+          populateDropdowns();
+          renderDashboard();
+          updateSummaryStats();
 
-        populateDropdowns();
-        renderDashboard();
-        updateSummaryStats();
+          showBanner(`✅ Berhasil terhubung! Memuat ${masterBranches.length} cabang.`, "success");
+          document.getElementById("statStatusText").textContent = "Connected Live";
+        } else {
+          throw new Error("Data cabang kosong di tab Master_Cabang.");
+        }
 
-        showBanner(`✅ Berhasil terhubung! Memuat ${masterBranches.length} cabang.`, "success");
-        document.getElementById("statStatusText").textContent = "Connected Live";
-      } else {
+      } catch (err) {
+        console.error("Fetch Error:", err);
         document.getElementById("statStatusText").textContent = "Error Access";
-        showBanner("❌ Gagal Mengakses Google Sheets. Cek Pengaturan Bagikan (Share).", "error");
+        showBanner(`❌ Gagal: ${err.message}`, "error");
         document.getElementById("branchTableBody").innerHTML = `
           <tr>
             <td colspan="5" class="py-10 text-center text-red-600 font-bold">
               <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
-              <p class="text-lg">Gagal Terhubung ke Google Sheets (HTTP 404)</p>
-              <div class="text-xs font-normal text-slate-600 max-w-lg mx-auto mt-2 bg-red-50 p-3 rounded-lg border border-red-200 text-left space-y-1">
-                <p class="font-bold text-red-800 mb-1">Panduan Memperbaiki:</p>
-                <p>1. Buka file Google Sheets Kakak.</p>
-                <p>2. Klik tombol <b>Bagikan (Share)</b> di kanan atas.</p>
-                <p>3. Ubah <b>Akses umum</b> menjadi <b>"Siapa saja yang memiliki link"</b> (Pelihat).</p>
-                <p>4. Jika ID Sheets berubah, klik tombol <b>"Set Sheet ID"</b> di header atas web ini.</p>
-              </div>
+              <p class="text-lg">Gagal Terhubung (${err.message})</p>
+              <p class="text-xs font-normal text-slate-500 mt-1">Pastikan pengaturan deployment Apps Script di-set ke 'Who has access: Anyone'.</p>
             </td>
           </tr>
         `;
