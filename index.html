@@ -16,43 +16,180 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-  <!-- Banner Status API -->
-  <div id="apiStatusBanner" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 text-center flex justify-between items-center hidden">
-    <span id="apiStatusText">⏳ Memuat data cabang dari Google Sheets...</span>
-    <button onclick="loadAllData()" class="underline bg-blue-700 px-2.5 py-1 rounded hover:bg-blue-800 transition">Refresh Data</button>
-  </div>
-
   <!-- Header Navbar -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
-      <div class="flex items-center gap-6">
-        <h1 class="text-xl font-bold flex items-center gap-2">
-          <i class="fa-solid fa-chart-line"></i> Monitoring NOS Cabang
-        </h1>
-        <!-- Navigasi Tab -->
-        <nav class="flex bg-blue-700/60 p-1 rounded-xl gap-1">
-          <button id="tabDashBtn" onclick="switchTab('dashboard')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm">
-            <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard
-          </button>
-          <button id="tabFormBtn" onclick="switchTab('checklist')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition">
-            <i class="fa-solid fa-list-check mr-1"></i> Form Checklist NOS
-          </button>
-        </nav>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button onclick="loadAllData()" class="px-3.5 py-1.5 bg-white text-blue-700 hover:bg-blue-50 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm">
-          <i class="fa-solid fa-rotate"></i> Refresh Data
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <h1 class="text-xl font-bold tracking-tight">Monitoring NOS Cabang</h1>
+      
+      <!-- Navigasi Tab -->
+      <nav class="flex bg-blue-700/50 p-1 rounded-xl gap-1">
+        <button id="navFormBtn" onclick="switchMainTab('form')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-clipboard-list"></i> Form Ceklis
         </button>
-      </div>
+        <button id="navDashBtn" onclick="switchMainTab('dashboard')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-pie"></i> Dashboard & Grade
+        </button>
+      </nav>
     </div>
   </header>
 
-  <!-- Main Content Area -->
-  <main class="max-w-7xl mx-auto px-4 py-6">
+  <!-- Content Container -->
+  <main class="max-w-6xl mx-auto px-4 py-8">
 
-    <!-- ==================== TAB 1: DASHBOARD MONITORING ==================== -->
-    <div id="viewDashboard">
+    <!-- ========================================================================= -->
+    <!-- TAB 1: FORM CEKLIS (3-STEP PROCESS)                                       -->
+    <!-- ========================================================================= -->
+    <div id="tabFormCeklis">
+
+      <!-- STEP 1: IDENTITAS ASSESSOR -->
+      <div id="step1Identitas" class="max-w-lg mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-2xl font-extrabold text-slate-800 mb-1">Identitas Assessor</h2>
+        <p class="text-xs text-slate-500 mb-6">Pilih cabang dan pendaftaran nama petugas.</p>
+
+        <form onsubmit="handleLanjutSection(event)" class="space-y-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Cabang</label>
+            <select id="inputCabang" required class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+              <option value="">-- Pilih Cabang --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Petugas / User</label>
+            <input type="text" id="inputNamaPetugas" required placeholder="Ketik Nama Lengkap..." class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Jabatan Assessor / Petugas</label>
+            <input type="text" id="inputJabatan" required placeholder="Contoh: Auditor / Supervisor" class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+          </div>
+
+          <button type="submit" class="w-full mt-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+            Lanjut Pilih Section <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- STEP 2: PILIH SECTION PEKERJAAN -->
+      <div id="step2Section" class="max-w-xl mx-auto hidden">
+        <div class="flex justify-between items-center mb-4">
+          <span id="badgeIdentitas" class="px-3.5 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
+            Cabang: -
+          </span>
+          <button onclick="goToStep(1)" class="text-xs text-blue-600 hover:underline font-bold">
+            Ganti Identitas
+          </button>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Pilih Section Pekerjaan</h2>
+
+        <div class="space-y-3" id="sectionListContainer">
+          <!-- Item Section akan dirender secara dinamis oleh JS -->
+        </div>
+      </div>
+
+      <!-- STEP 3: AUDIT CHECKLIST ITEM -->
+      <div id="step3Audit" class="max-w-2xl mx-auto hidden">
+        <div class="flex justify-between items-center mb-4">
+          <button onclick="goToStep(2)" class="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-house text-xs"></i> Kembali ke Panel Section
+          </button>
+          <span id="badgeCabangAudit" class="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-full text-xs font-bold flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-red-500"></i> <span id="textCabangAudit">-</span>
+          </span>
+        </div>
+
+        <!-- Section Info & Progress -->
+        <div class="flex justify-between items-center mb-1">
+          <h3 id="labelSectionTitle" class="text-xs font-bold text-blue-900 uppercase tracking-wider">Section: -</h3>
+          <span id="labelItemProgress" class="text-xs text-slate-500 font-bold">Item 1 dari 71</span>
+        </div>
+        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mb-6">
+          <div id="progressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: 5%"></div>
+        </div>
+
+        <!-- Card Pertanyaan Ceklis -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+          <!-- Priority Header -->
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="text-rose-500 text-base">📌</span>
+              <div>
+                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">SKALA PRIORITAS CEKLIS</p>
+                <p class="text-xs font-bold text-slate-800">PENGISIAN STANDAR</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[11px] font-extrabold">S G P</span>
+          </div>
+
+          <!-- Badges -->
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-[11px] font-bold flex items-center gap-1">
+              <i class="fa-solid fa-camera"></i> Wajib Foto Bukti
+            </span>
+            <span id="badgePJ" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[11px] font-bold flex items-center gap-1">
+              <i class="fa-solid fa-user-shield"></i> PJ: Kebersihan Network
+            </span>
+          </div>
+
+          <!-- Title Item -->
+          <h3 id="itemTitle" class="text-lg font-extrabold text-slate-800">1. Exterior</h3>
+
+          <!-- Indikator & Panduan Box -->
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between items-center text-amber-900 border-b border-amber-200/60 pb-2">
+              <span class="text-xs font-bold flex items-center gap-1.5">
+                📜 Indikator & Panduan Penilaian
+              </span>
+              <button class="text-[11px] font-bold bg-amber-200/60 hover:bg-amber-200 px-2.5 py-0.5 rounded text-amber-900 transition flex items-center gap-1">
+                <i class="fa-solid fa-magnifying-glass-plus"></i> Perbesar
+              </button>
+            </div>
+
+            <div class="bg-amber-100/60 p-2.5 rounded-lg border border-amber-200/50 text-xs font-bold text-amber-950 flex items-center gap-2">
+              <i class="fa-solid fa-user-tag text-blue-600"></i>
+              <span>Jabatan Penanggung Jawab (Yang Diperiksa): <strong id="pjDetailText">Kebersihan Network</strong></span>
+            </div>
+
+            <div id="panduanText" class="text-xs text-slate-600 space-y-2 max-h-36 overflow-y-auto pr-1">
+              <p>Exterior dalam keadaan: Bersih (dibersihkan 1 tahun sekali - bukti ditunjukkan), Rapih & Tidak Rusak.</p>
+              <p>Exterior terdiri dari: Fascia, Pylon / Projecting Sign, Window Display, Louver, dan Kanopi.</p>
+              <p>Kriteria PENGECATAN dinding Exterior (mana yang tercapai lebih dulu):</p>
+            </div>
+          </div>
+
+          <!-- Opsi Hasil Penilaian -->
+          <div>
+            <label class="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">HASIL PENILAIAN</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" onclick="selectResult('Exist Good')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
+                Exist Good
+              </button>
+              <button type="button" onclick="selectResult('Exist Not Good')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
+                Exist Not Good
+              </button>
+              <button type="button" onclick="selectResult('Not Exist')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
+                Not Exist
+              </button>
+              <button type="button" onclick="selectResult('Not Available')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
+                Not Available
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <button onclick="handleSimpanLanjut()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+            Simpan & Lanjut Item Berikutnya <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: DASHBOARD & GRADE                                                  -->
+    <!-- ========================================================================= -->
+    <div id="tabDashboard" class="hidden">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 class="text-2xl font-bold text-slate-800">📊 Dashboard Monitoring NOS Cabang</h2>
@@ -65,10 +202,13 @@
               <option value="ALL">Semua Cabang</option>
             </select>
           </div>
+          <button onclick="loadAllData()" class="mt-5 px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-700 shadow-sm transition">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
         </div>
       </div>
 
-      <!-- Ringkasan Statistik -->
+      <!-- Ringkasan Kartu Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
@@ -108,7 +248,7 @@
         </div>
       </div>
 
-      <!-- Tabel Pencapaian -->
+      <!-- Tabel Detail Cabang -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 class="font-bold text-slate-700 text-base flex items-center gap-2">
@@ -126,46 +266,17 @@
                 <th class="py-4 px-5">Progress Overall</th>
                 <th class="py-4 px-5">Compliance Score</th>
                 <th class="py-4 px-5 text-center">Grade Final Cabang</th>
-                <th class="py-4 px-5 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody id="branchTableBody" class="divide-y divide-slate-100">
               <tr>
-                <td colspan="6" class="py-12 text-center text-slate-400">
+                <td colspan="5" class="py-12 text-center text-slate-400">
                   <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
-                  <p>Sedang menghubungkan ke Google Sheets...</p>
+                  <p>Memuat data cabang...</p>
                 </td>
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== TAB 2: FORM CHECKLIST NOS ==================== -->
-    <div id="viewChecklist" class="hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-          <div>
-            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-clipboard-check text-blue-600"></i> Form Checklist 6 Panel NOS
-            </h2>
-            <p class="text-sm text-slate-500">Pilih cabang untuk melakukan audit dan penilaian checklist standar operasional.</p>
-          </div>
-          <div class="w-full md:w-72">
-            <label class="text-xs font-bold text-slate-600 block mb-1">PILIH CABANG AUDIT:</label>
-            <select id="formSelectCabang" onchange="onSelectCabangChecklist()" class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-lg text-sm font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">-- Pilih Cabang --</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Detail Panel Checklist Form -->
-        <div id="checklistFormBody" class="pt-6">
-          <div class="text-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-            <i class="fa-solid fa-store text-4xl text-slate-300 mb-3"></i>
-            <p class="font-semibold">Silakan pilih cabang terlebih dahulu di menu drop-down di atas untuk mengisi Form Checklist.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -179,74 +290,156 @@
     let masterBranches = [];
     let branchDataList = [];
 
-    // Urutan Grade Terendah (1) ke Tertinggi (4)
-    const GRADE_RANK = {
-      "BRONZE": 1,
-      "SILVER": 2,
-      "GOLD": 3,
-      "PLATINUM": 4
-    };
+    // State Pengisian Ceklis
+    let sessionAssessor = { cabangKode: '', cabangNama: '', petugas: '', jabatan: '' };
+    let selectedSection = null;
+    let currentItemIndex = 1;
+    let selectedResultValue = '';
 
-    // Daftar 6 Panel NOS Standar
-    const PANEL_NOS = [
-      { id: 1, nama: "Panel 1: Area Kebersihan, Kerapihan & Display", maxItem: 5 },
-      { id: 2, nama: "Panel 2: Compliance Operasional & Standar Kasir", maxItem: 5 },
-      { id: 3, nama: "Panel 3: Service Excellence & Layanan Pelanggan", maxItem: 5 },
-      { id: 4, nama: "Panel 4: Pengelolaan Stok & Inventory", maxItem: 5 },
-      { id: 5, nama: "Panel 5: Pemeliharaan Aset & Fasilitas Toko", maxItem: 5 },
-      { id: 6, nama: "Panel 6: Focus Tracker & Kualifikasi Grade Cabang", maxItem: 5 }
+    const GRADE_RANK = { "BRONZE": 1, "SILVER": 2, "GOLD": 3, "PLATINUM": 4 };
+
+    // Daftar Section Pekerjaan
+    const SECTIONS = [
+      { id: 'H1 Premises', name: 'H1 Premises', desc: 'Bisa Dikerjakan' },
+      { id: 'H1 Process', name: 'H1 Process', desc: 'Bisa Dikerjakan' },
+      { id: 'H1 People', name: 'H1 People', desc: 'Bisa Dikerjakan' },
+      { id: 'H23 Premises', name: 'H23 Premises', desc: 'Bisa Dikerjakan' },
+      { id: 'H23 Process', name: 'H23 Process', desc: 'Bisa Dikerjakan' },
+      { id: 'H23 People', name: 'H23 People', desc: 'Bisa Dikerjakan' }
     ];
 
-    function showBanner(msg, type = "info") {
-      const banner = document.getElementById("apiStatusBanner");
-      const text = document.getElementById("apiStatusText");
-      if (!banner || !text) return;
+    // Navigasi Utama Tab
+    function switchMainTab(tab) {
+      const formView = document.getElementById("tabFormCeklis");
+      const dashView = document.getElementById("tabDashboard");
+      const navFormBtn = document.getElementById("navFormBtn");
+      const navDashBtn = document.getElementById("navDashBtn");
 
-      banner.classList.remove("hidden", "bg-blue-600", "bg-emerald-600", "bg-red-600", "bg-amber-500");
-
-      if (type === "success") banner.classList.add("bg-emerald-600");
-      else if (type === "error") banner.classList.add("bg-red-600");
-      else if (type === "warning") banner.classList.add("bg-amber-500");
-      else banner.classList.add("bg-blue-600");
-
-      text.textContent = msg;
-      banner.classList.remove("hidden");
-
-      if (type === "success") {
-        setTimeout(() => banner.classList.add("hidden"), 4000);
-      }
-    }
-
-    // Switch Tab Function
-    function switchTab(tab) {
-      const dashView = document.getElementById("viewDashboard");
-      const checkView = document.getElementById("viewChecklist");
-      const dashBtn = document.getElementById("tabDashBtn");
-      const formBtn = document.getElementById("tabFormBtn");
-
-      if (tab === "dashboard") {
-        dashView.classList.remove("hidden");
-        checkView.classList.add("hidden");
-
-        dashBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm";
-        formBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition";
-      } else {
+      if (tab === 'form') {
+        formView.classList.remove("hidden");
         dashView.classList.add("hidden");
-        checkView.classList.remove("hidden");
-
-        formBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm";
-        dashBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600 transition";
+        navFormBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5";
+        navDashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5";
+      } else {
+        formView.classList.add("hidden");
+        dashView.classList.remove("hidden");
+        navDashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5";
+        navFormBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5";
       }
     }
 
+    // Step Flow Ceklis Wizard
+    function goToStep(stepNumber) {
+      document.getElementById("step1Identitas").classList.add("hidden");
+      document.getElementById("step2Section").classList.add("hidden");
+      document.getElementById("step3Audit").classList.add("hidden");
+
+      if (stepNumber === 1) {
+        document.getElementById("step1Identitas").classList.remove("hidden");
+      } else if (stepNumber === 2) {
+        document.getElementById("step2Section").classList.remove("hidden");
+        renderSectionList();
+      } else if (stepNumber === 3) {
+        document.getElementById("step3Audit").classList.remove("hidden");
+        renderAuditItem();
+      }
+    }
+
+    // Step 1 Submit
+    function handleLanjutSection(e) {
+      e.preventDefault();
+      const select = document.getElementById("inputCabang");
+      const cabangKode = select.value;
+      const cabangNama = select.options[select.selectedIndex].text.split(' (')[0];
+      const petugas = document.getElementById("inputNamaPetugas").value;
+      const jabatan = document.getElementById("inputJabatan").value;
+
+      sessionAssessor = { cabangKode, cabangNama, petugas, jabatan };
+
+      document.getElementById("badgeIdentitas").textContent = `Cabang: ${cabangNama} | ${petugas}`;
+      goToStep(2);
+    }
+
+    // Render List Section Pekerjaan (Step 2)
+    function renderSectionList() {
+      const container = document.getElementById("sectionListContainer");
+      container.innerHTML = "";
+
+      SECTIONS.forEach(sec => {
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-blue-300 transition flex justify-between items-center";
+        card.innerHTML = `
+          <div>
+            <h4 class="font-extrabold text-slate-800 text-base">${sec.name}</h4>
+            <p class="text-xs text-slate-400 font-medium">${sec.desc}</p>
+          </div>
+          <button onclick="selectSection('${sec.id}')" class="px-5 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold rounded-xl text-xs transition">
+            Pilih
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Select Section -> Go to Step 3
+    function selectSection(secId) {
+      selectedSection = SECTIONS.find(s => s.id === secId);
+      currentItemIndex = 1;
+      goToStep(3);
+    }
+
+    // Render Item Ceklis (Step 3)
+    function renderAuditItem() {
+      document.getElementById("labelSectionTitle").textContent = `Section: ${selectedSection ? selectedSection.name : ''}`;
+      document.getElementById("textCabangAudit").textContent = sessionAssessor.cabangNama;
+      document.getElementById("labelItemProgress").textContent = `Item ${currentItemIndex} dari 71`;
+      
+      const progPercent = Math.round((currentItemIndex / 71) * 100);
+      document.getElementById("progressBar").style.width = `${progPercent}%`;
+
+      // Reset opsi terpilih
+      selectedResultValue = '';
+      document.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('text-slate-700', 'border-slate-200');
+      });
+    }
+
+    function selectResult(val) {
+      selectedResultValue = val;
+      const btns = document.querySelectorAll('.opt-btn');
+      btns.forEach(btn => {
+        if (btn.textContent.trim() === val) {
+          btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+          btn.classList.remove('text-slate-700', 'border-slate-200');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+          btn.classList.add('text-slate-700', 'border-slate-200');
+        }
+      });
+    }
+
+    function handleSimpanLanjut() {
+      if (!selectedResultValue) {
+        alert("Silakan pilih salah satu Hasil Penilaian terlebih dahulu.");
+        return;
+      }
+      if (currentItemIndex < 71) {
+        currentItemIndex++;
+        renderAuditItem();
+      } else {
+        alert("🎉 Seluruh item ceklis pada section ini telah selesai diisi!");
+        goToStep(2);
+      }
+    }
+
+    // API & DASHBOARD FUNCTIONS
     async function loadAllData() {
       if (!WEB_APP_URL) {
         document.getElementById("statStatusText").textContent = "Need Config";
-        showBanner("⚠️ Silakan atur WEB_APP_URL di kodingan index.html Kakak.", "warning");
         return;
       }
 
-      showBanner("⏳ Memuat data cabang dari Google Apps Script...", "info");
       document.getElementById("statStatusText").textContent = "Syncing...";
 
       try {
@@ -254,8 +447,6 @@
         if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
         
         const data = await response.json();
-
-        if (data.error) throw new Error(data.error);
 
         if (Array.isArray(data) && data.length > 0) {
           masterBranches = data;
@@ -271,35 +462,27 @@
           renderDashboard();
           updateSummaryStats();
 
-          showBanner(`✅ Berhasil terhubung! Memuat ${masterBranches.length} cabang.`, "success");
           document.getElementById("statStatusText").textContent = "Connected Live";
-        } else {
-          throw new Error("Data cabang kosong di tab Master_Cabang.");
         }
-
       } catch (err) {
         console.error("Fetch Error:", err);
         document.getElementById("statStatusText").textContent = "Error Access";
-        showBanner(`❌ Gagal: ${err.message}`, "error");
-      }
-    }
-
-    function updateSummaryStats() {
-      document.getElementById("statTotalBranches").textContent = branchDataList.length;
-      if (branchDataList.length > 0) {
-        const totalProg = branchDataList.reduce((acc, curr) => acc + curr.progress, 0);
-        const totalScore = branchDataList.reduce((acc, curr) => acc + curr.score, 0);
-        const avgProg = Math.round(totalProg / branchDataList.length);
-        const avgScore = Math.round(totalScore / branchDataList.length);
-
-        document.getElementById("statAvgProgress").textContent = `${avgProg}%`;
-        document.getElementById("statAvgCompliance").textContent = `${avgScore}%`;
       }
     }
 
     function populateDropdowns() {
+      const selectForm = document.getElementById("inputCabang");
       const selectDash = document.getElementById("filterCabang");
-      const selectForm = document.getElementById("formSelectCabang");
+
+      if (selectForm) {
+        selectForm.innerHTML = `<option value="">-- Pilih Cabang --</option>`;
+        masterBranches.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b.kode;
+          opt.textContent = `${b.nama} (${b.kode})`;
+          selectForm.appendChild(opt);
+        });
+      }
 
       if (selectDash) {
         selectDash.innerHTML = `<option value="ALL">Semua Cabang (${masterBranches.length})</option>`;
@@ -310,15 +493,15 @@
           selectDash.appendChild(opt);
         });
       }
+    }
 
-      if (selectForm) {
-        selectForm.innerHTML = `<option value="">-- Pilih Cabang Audit --</option>`;
-        masterBranches.forEach(b => {
-          const opt = document.createElement("option");
-          opt.value = b.kode;
-          opt.textContent = `${b.nama} (${b.kode})`;
-          selectForm.appendChild(opt);
-        });
+    function updateSummaryStats() {
+      document.getElementById("statTotalBranches").textContent = branchDataList.length;
+      if (branchDataList.length > 0) {
+        const totalProg = branchDataList.reduce((acc, curr) => acc + curr.progress, 0);
+        const totalScore = branchDataList.reduce((acc, curr) => acc + curr.score, 0);
+        document.getElementById("statAvgProgress").textContent = `${Math.round(totalProg / branchDataList.length)}%`;
+        document.getElementById("statAvgCompliance").textContent = `${Math.round(totalScore / branchDataList.length)}%`;
       }
     }
 
@@ -327,10 +510,10 @@
       let filtered = [...branchDataList];
 
       if (selectedVal !== "ALL") {
-        filtered = filtered.filter(b => b.kode === selectedVal || b.nama === selectedVal);
+        filtered = filtered.filter(b => b.kode === selectedVal);
       }
 
-      // SORTING: Terendah ke Tertinggi (BRONZE -> SILVER -> GOLD -> PLATINUM)
+      // SORTING: BRONZE -> SILVER -> GOLD -> PLATINUM
       filtered.sort((a, b) => {
         const rankA = GRADE_RANK[a.grade] || 1;
         const rankB = GRADE_RANK[b.grade] || 1;
@@ -346,7 +529,7 @@
       tbody.innerHTML = "";
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">Tidak ada data cabang.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Tidak ada data cabang.</td></tr>`;
         return;
       }
 
@@ -378,108 +561,9 @@
               <i class="fa-solid ${badgeIcon}"></i> ${b.grade}
             </span>
           </td>
-          <td class="py-3.5 px-5 text-center">
-            <button onclick="openChecklistCabang('${b.kode}')" class="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto">
-              <i class="fa-solid fa-pen-to-square"></i> Checklist
-            </button>
-          </td>
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    // Membuka checklist cabang dari tombol di tabel
-    function openChecklistCabang(kode) {
-      switchTab('checklist');
-      const selectForm = document.getElementById("formSelectCabang");
-      if (selectForm) {
-        selectForm.value = kode;
-        onSelectCabangChecklist();
-      }
-    }
-
-    // Generate Form Checklist saat Cabang Dipilih
-    function onSelectCabangChecklist() {
-      const kode = document.getElementById("formSelectCabang").value;
-      const container = document.getElementById("checklistFormBody");
-
-      if (!kode) {
-        container.innerHTML = `
-          <div class="text-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-            <i class="fa-solid fa-store text-4xl text-slate-300 mb-3"></i>
-            <p class="font-semibold">Silakan pilih cabang terlebih dahulu di menu drop-down di atas untuk mengisi Form Checklist.</p>
-          </div>
-        `;
-        return;
-      }
-
-      const cabang = branchDataList.find(b => b.kode === kode);
-
-      let html = `
-        <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-          <div>
-            <h3 class="text-lg font-bold text-blue-950">${cabang ? cabang.nama : kode} (${kode})</h3>
-            <p class="text-xs text-blue-600">Silakan periksa item checklist 6 Panel NOS di bawah ini.</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <span class="text-xs text-slate-500 font-semibold block">Grade Saat Ini</span>
-              <span class="font-bold text-sm text-blue-800">${cabang ? cabang.grade : "BRONZE"}</span>
-            </div>
-            <button onclick="simpanChecklist()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
-              <i class="fa-solid fa-floppy-disk"></i> Simpan Audit
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6">
-      `;
-
-      PANEL_NOS.forEach(panel => {
-        html += `
-          <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-            <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
-              <i class="fa-solid fa-square-check text-blue-600"></i> ${panel.nama}
-            </h4>
-            <div class="space-y-2.5">
-        `;
-
-        for (let i = 1; i <= panel.maxItem; i++) {
-          html += `
-            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 text-xs">
-              <span class="font-medium text-slate-700">Item Standar #${i} - Audit Compliance Area Panel ${panel.id}</span>
-              <div class="flex items-center gap-3">
-                <label class="flex items-center gap-1 cursor-pointer">
-                  <input type="radio" name="panel_${panel.id}_item_${i}" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
-                  <span class="font-bold text-emerald-700">Sesuai</span>
-                </label>
-                <label class="flex items-center gap-1 cursor-pointer">
-                  <input type="radio" name="panel_${panel.id}_item_${i}" value="0" class="text-red-600 focus:ring-red-500">
-                  <span class="font-bold text-red-600">Tidak</span>
-                </label>
-              </div>
-            </div>
-          `;
-        }
-
-        html += `</div></div>`;
-      });
-
-      html += `
-        </div>
-        <div class="mt-6 text-right">
-          <button onclick="simpanChecklist()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-md transition inline-flex items-center gap-2">
-            <i class="fa-solid fa-check-circle"></i> Simpan Hasil Audit Cabang
-          </button>
-        </div>
-      `;
-
-      container.innerHTML = html;
-    }
-
-    function simpanChecklist() {
-      alert("✅ Data audit checklist berhasil disimpan!");
-      switchTab('dashboard');
     }
 
     window.addEventListener("DOMContentLoaded", loadAllData);
