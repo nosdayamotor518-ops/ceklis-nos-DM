@@ -11,6 +11,7 @@
     .badge-bronze { background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%); color: #ffffff; border: 1.5px solid #ffcc80; }
     .badge-silver { background: linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%); color: #ffffff; border: 1.5px solid #e5e7eb; }
     .badge-gold { background: linear-gradient(135deg, #854d0e 0%, #ca8a04 50%, #eab308 100%); color: #ffffff; border: 1.5px solid #fef08a; }
+    .badge-platinum { background: linear-gradient(135deg, #1e293b 0%, #0284c7 50%, #38bdf8 100%); color: #ffffff; border: 1.5px solid #bae6fd; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
@@ -130,10 +131,18 @@
   </main>
 
   <script>
-    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "https://script.google.com/macros/s/AKfycbzvZW8hdCDrodQZvgYgOQ2wU8fJuBf7NjPqJa-Ykftu0htpcdxE2ZqwBSpKOu4DTchoNQ/exec";
+    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "";
 
     let masterBranches = [];
     let branchDataList = [];
+
+    // Urutan Grade Terendah (1) ke Tertinggi (4)
+    const GRADE_RANK = {
+      "BRONZE": 1,
+      "SILVER": 2,
+      "GOLD": 3,
+      "PLATINUM": 4
+    };
 
     function showBanner(msg, type = "info") {
       const banner = document.getElementById("apiStatusBanner");
@@ -180,7 +189,7 @@
         return;
       }
 
-      showBanner("⏳ Memuat 119 data cabang dari Google Apps Script...", "info");
+      showBanner("⏳ Memuat data cabang dari Google Apps Script...", "info");
       document.getElementById("statStatusText").textContent = "Syncing...";
 
       try {
@@ -198,9 +207,9 @@
           branchDataList = masterBranches.map(b => ({
             kode: b.kode,
             nama: b.nama,
-            progress: 0,
-            score: 0,
-            grade: "BRONZE"
+            progress: Number(b.progress) || 0,
+            score: Number(b.score) || 0,
+            grade: (b.grade || "BRONZE").toUpperCase()
           }));
 
           populateDropdowns();
@@ -263,6 +272,18 @@
         filtered = filtered.filter(b => b.kode === selectedVal || b.nama === selectedVal);
       }
 
+      // SORTING AUTOMATIS: Terendah ke Tertinggi (BRONZE -> SILVER -> GOLD -> PLATINUM)
+      filtered.sort((a, b) => {
+        const rankA = GRADE_RANK[a.grade] || 1;
+        const rankB = GRADE_RANK[b.grade] || 1;
+
+        if (rankA !== rankB) {
+          return rankA - rankB; // Ascending Order
+        }
+        // Jika Grade sama, urutkan berdasarkan Nama Cabang secara Alfabetis
+        return a.nama.localeCompare(b.nama);
+      });
+
       const tbody = document.getElementById("branchTableBody");
       const badge = document.getElementById("branchCountBadge");
       if (badge) badge.textContent = `Total: ${filtered.length} Cabang`;
@@ -281,8 +302,17 @@
 
         let badgeClass = "badge-bronze";
         let badgeIcon = "fa-award";
-        if (b.grade === "GOLD") { badgeClass = "badge-gold"; badgeIcon = "fa-crown"; }
-        else if (b.grade === "SILVER") { badgeClass = "badge-silver"; badgeIcon = "fa-medal"; }
+
+        if (b.grade === "PLATINUM") {
+          badgeClass = "badge-platinum";
+          badgeIcon = "fa-gem";
+        } else if (b.grade === "GOLD") {
+          badgeClass = "badge-gold";
+          badgeIcon = "fa-crown";
+        } else if (b.grade === "SILVER") {
+          badgeClass = "badge-silver";
+          badgeIcon = "fa-medal";
+        }
 
         tr.innerHTML = `
           <td class="py-3.5 px-5 font-mono text-xs font-bold text-slate-500">${b.kode}</td>
