@@ -42,7 +42,7 @@
           <i class="fas fa-user mr-1 text-amber-300"></i> <span id="textHeaderAuditor">-</span>
         </span>
         <span id="locationBadge" class="bg-blue-900 text-amber-300 text-xs px-3 py-1 rounded-full font-extrabold tracking-wider border border-blue-400/30">
-          📍 CIKARANG
+          📍 -
         </span>
       </div>
     </div>
@@ -75,12 +75,7 @@
                 <i class="fas fa-store"></i>
               </span>
               <select id="inputCabang" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
-                <option value="" disabled selected>-- Pilih Cabang --</option>
-                <option value="CIKARANG">CIKARANG</option>
-                <option value="BANDUNG">BANDUNG</option>
-                <option value="JAKARTA">JAKARTA</option>
-                <option value="SURABAYA">SURABAYA</option>
-                <option value="SEMARANG">SEMARANG</option>
+                <option value="" disabled selected>-- Memuat Daftar Cabang... --</option>
               </select>
             </div>
           </div>
@@ -320,8 +315,52 @@
     };
 
     window.onload = function() {
+      fetchCabangData();
       fetchChecklistData();
     };
+
+    // FUNGSI LOAD CABANG DINAMIS DARI GOOGLE SHEET (MASTER CABANG)
+    function fetchCabangData() {
+      const selectCabang = document.getElementById('inputCabang');
+      
+      fetch(`${WEB_APP_URL}?action=getCabang`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            selectCabang.innerHTML = '<option value="" disabled selected>-- Pilih Cabang --</option>';
+            data.forEach(item => {
+              let namaCabang = (typeof item === 'object' && item !== null) 
+                ? (item.cabang || item.nama || item.namaCabang || Object.values(item)[0]) 
+                : item;
+              
+              if (namaCabang) {
+                let opt = document.createElement('option');
+                opt.value = String(namaCabang).toUpperCase();
+                opt.innerText = String(namaCabang).toUpperCase();
+                selectCabang.appendChild(opt);
+              }
+            });
+          } else {
+            fallbackDefaultCabang();
+          }
+        })
+        .catch(err => {
+          console.warn("Gagal mengambil data cabang otomatis dari sheet Master Cabang, menggunakan daftar standar:", err);
+          fallbackDefaultCabang();
+        });
+    }
+
+    function fallbackDefaultCabang() {
+      const selectCabang = document.getElementById('inputCabang');
+      selectCabang.innerHTML = `
+        <option value="" disabled selected>-- Pilih Cabang --</option>
+        <option value="CIKARANG">CIKARANG</option>
+        <option value="BANDUNG">BANDUNG</option>
+        <option value="JAKARTA">JAKARTA</option>
+        <option value="SURABAYA">SURABAYA</option>
+        <option value="SEMARANG">SEMARANG</option>
+      `;
+    }
 
     function startAudit(event) {
       event.preventDefault();
@@ -587,7 +626,7 @@
 
       updateDynamicRanking(auditMeta.cabang, compPercent);
 
-      // PREDIKAT AUDIT DENGAN BANNER GRADIENT & IKON BENERAN BESAR
+      // PREDIKAT AUDIT DENGAN BANNER GRADIENT & IKON BESAR
       const gradeBadge = document.getElementById('dashGradeBadge');
       const gradeIcon = document.getElementById('dashGradeIcon');
       const gradeText = document.getElementById('dashGradeText');
