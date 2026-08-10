@@ -3,723 +3,328 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitoring NOS Cabang</title>
+  <title>NOS Cabang - Monitoring</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .badge-base { padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; text-transform: uppercase; }
-    .badge-bronze { background: linear-gradient(135deg, #5c1d06 0%, #a0441d 50%, #d2691e 100%); color: #ffffff; border: 1.5px solid #ffcc80; }
-    .badge-silver { background: linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%); color: #ffffff; border: 1.5px solid #e5e7eb; }
-    .badge-gold { background: linear-gradient(135deg, #854d0e 0%, #ca8a04 50%, #eab308 100%); color: #ffffff; border: 1.5px solid #fef08a; }
-    .badge-platinum { background: linear-gradient(135deg, #1e293b 0%, #0284c7 50%, #38bdf8 100%); color: #ffffff; border: 1.5px solid #bae6fd; }
-  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
-  <!-- Header Navbar -->
-  <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-      <h1 class="text-xl font-bold tracking-tight">Monitoring NOS Cabang</h1>
-      <nav class="flex bg-blue-700/50 p-1 rounded-xl gap-1">
-        <button id="navFormBtn" onclick="switchMainTab('form')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-clipboard-list"></i> Form Ceklis
-        </button>
-        <button id="navDashBtn" onclick="switchMainTab('dashboard')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-pie"></i> Dashboard & Grade
-        </button>
-      </nav>
-    </div>
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+    <h1 class="text-xl font-bold">NOS Cabang</h1>
+    <span id="locationBadge" class="bg-blue-800 text-xs px-3 py-1 rounded-full font-semibold">CIKARANG</span>
   </header>
 
-  <!-- Main Container -->
-  <main class="max-w-6xl mx-auto px-4 py-8">
-
-    <!-- ================= TAB 1: FORM CEKLIS ================= -->
-    <div id="tabFormCeklis">
-
-      <!-- STEP 1: IDENTITAS ASSESSOR -->
-      <div id="step1Identitas" class="max-w-lg mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-2xl font-extrabold text-slate-800 mb-1">Identitas Assessor</h2>
-        <p class="text-xs text-slate-500 mb-6">Pilih cabang dan pendaftaran nama petugas.</p>
-
-        <form onsubmit="handleLanjutSection(event)" class="space-y-5">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Cabang</label>
-            <select id="inputCabang" required class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-              <option value="">-- Pilih Cabang --</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Petugas / User</label>
-            <input type="text" id="inputNamaPetugas" required placeholder="Ketik Nama Lengkap..." class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1.5">Jabatan Assessor / Petugas</label>
-            <input type="text" id="inputJabatan" required placeholder="Contoh: Auditor / Supervisor" class="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-          </div>
-
-          <button type="submit" class="w-full mt-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
-            Lanjut Pilih Section <i class="fa-solid fa-arrow-right text-xs"></i>
-          </button>
-        </form>
-      </div>
-
-      <!-- STEP 2: PILIH SECTION PEKERJAAN -->
-      <div id="step2Section" class="max-w-xl mx-auto hidden">
-        <div class="flex justify-between items-center mb-4">
-          <span id="badgeIdentitas" class="px-3.5 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
-            Cabang: -
-          </span>
-          <button onclick="goToStep(1)" class="text-xs text-blue-600 hover:underline font-bold">
-            Ganti Identitas
-          </button>
-        </div>
-
-        <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Pilih Section Pekerjaan</h2>
-        <div class="space-y-3" id="sectionListContainer"></div>
-      </div>
-
-      <!-- STEP 3: AUDIT CHECKLIST ITEM -->
-      <div id="step3Audit" class="max-w-2xl mx-auto hidden">
-        <div class="flex justify-between items-center mb-4">
-          <button onclick="goToStep(2)" class="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-house text-xs"></i> Kembali ke Panel Section
-          </button>
-          <span id="badgeCabangAudit" class="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-full text-xs font-bold flex items-center gap-1">
-            <i class="fa-solid fa-location-dot text-red-500"></i> <span id="textCabangAudit">-</span>
-          </span>
-        </div>
-
-        <div class="flex justify-between items-center mb-1">
-          <h3 id="labelSectionTitle" class="text-xs font-bold text-blue-900 uppercase tracking-wider">SECTION: -</h3>
-          <span id="labelItemProgress" class="text-xs text-slate-500 font-bold">Item 1 dari 1</span>
-        </div>
-        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mb-6">
-          <div id="progressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <span class="text-rose-500 text-base">📌</span>
-              <div>
-                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">SKALA PRIORITAS CEKLIS</p>
-                <p class="text-xs font-bold text-slate-800" id="priorityTitle">PENGISIAN STANDAR</p>
-              </div>
-            </div>
-            <span class="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded-md text-[11px] font-extrabold" id="priorityCode">S G P</span>
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            <span id="badgeWajibFoto" class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-[11px] font-bold flex items-center gap-1">
-              <i class="fa-solid fa-camera"></i> Wajib Foto Bukti
-            </span>
-            <span id="badgePJ" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[11px] font-bold flex items-center gap-1">
-              <i class="fa-solid fa-user-shield"></i> <span id="pjText">PJ: Kebersihan Network</span>
-            </span>
-          </div>
-
-          <h3 id="itemTitle" class="text-lg font-extrabold text-slate-800">1. Exterior</h3>
-
-          <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 space-y-3">
-            <div class="flex justify-between items-center text-amber-900 border-b border-amber-200/60 pb-2">
-              <span class="text-xs font-bold flex items-center gap-1.5">
-                📜 Indikator & Panduan Penilaian
-              </span>
-              <button onclick="openModalPanduan()" class="text-[11px] font-bold bg-amber-200/60 hover:bg-amber-200 px-2.5 py-0.5 rounded text-amber-900 transition flex items-center gap-1">
-                <i class="fa-solid fa-magnifying-glass-plus"></i> Perbesar
-              </button>
-            </div>
-
-            <div class="bg-amber-100/60 p-2.5 rounded-lg border border-amber-200/50 text-xs font-bold text-amber-950 flex items-center gap-2">
-              <i class="fa-solid fa-user-tag text-blue-600"></i>
-              <span>Jabatan Penanggung Jawab (Yang Diperiksa): <strong id="pjDetailText">Kebersihan Network</strong></span>
-            </div>
-
-            <div id="panduanText" class="text-xs text-slate-600 space-y-2 max-h-36 overflow-y-auto pr-1"></div>
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">HASIL PENILAIAN</label>
-            <div class="grid grid-cols-2 gap-3">
-              <button type="button" onclick="selectResult('Exist Good')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
-                Exist Good
-              </button>
-              <button type="button" onclick="selectResult('Exist Not Good')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
-                Exist Not Good
-              </button>
-              <button type="button" onclick="selectResult('Not Exist')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
-                Not Exist
-              </button>
-              <button type="button" onclick="selectResult('Not Available')" class="opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center">
-                Not Available
-              </button>
-            </div>
-          </div>
-
-          <div id="navButtonsContainer" class="flex gap-2 pt-2">
-            <button id="btnPrevItem" onclick="handlePrevItem()" class="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1">
-              <i class="fa-solid fa-arrow-left text-xs"></i> Sebelumnya
-            </button>
-            <button id="btnNextItem" onclick="handleSimpanLanjut()" class="w-2/3 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
-              Simpan & Lanjut Item Berikutnya <i class="fa-solid fa-arrow-right text-xs"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
+  <main class="max-w-3xl mx-auto p-4">
+    <!-- Status Loading -->
+    <div id="loading" class="text-center py-10">
+      <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-2"></i>
+      <p class="text-gray-600 font-medium" id="loadingText">Memuat data dari Google Sheet...</p>
     </div>
 
-    <!-- ================= TAB 2: DASHBOARD ================= -->
-    <div id="tabDashboard" class="hidden">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <!-- Container Form Checklist -->
+    <div id="app" class="hidden bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+      
+      <!-- Top Sub-Header -->
+      <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800">📊 Dashboard Monitoring NOS Cabang</h2>
-          <p class="text-sm text-slate-500">Monitoring progres 6 Panel NOS & Focus Tracker Kualifikasi Grade Cabang.</p>
+          <span id="sectionName" class="text-xs font-bold text-blue-600 uppercase tracking-wider">SECTION: H1 PREMISES</span>
+          <h2 id="itemCounter" class="text-xs text-slate-500 font-semibold">Item 1 dari 1</h2>
         </div>
-        <div class="flex items-center gap-3">
-          <div>
-            <label class="text-xs font-semibold text-slate-500 block mb-1">Filter Cabang:</label>
-            <select id="filterCabang" onchange="renderDashboard()" class="px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="ALL">Semua Cabang</option>
-            </select>
+        <span id="badgePriority" class="bg-slate-200 text-slate-700 text-xs px-2.5 py-1 rounded font-bold tracking-widest">S G P</span>
+      </div>
+
+      <div class="p-5 space-y-5">
+        
+        <!-- Badge Mandatory Foto & PJ -->
+        <div class="flex flex-wrap gap-2">
+          <span id="badgeFoto" class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+            <i class="fas fa-camera"></i> <span id="textFoto">Wajib Foto Bukti</span>
+          </span>
+          <span id="badgePJ" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+            <i class="fas fa-user"></i> PJ: <span id="textPJ">-</span>
+          </span>
+        </div>
+
+        <!-- Judul Item -->
+        <h3 id="itemTitle" class="text-xl font-bold text-slate-800">1. Nama Item</h3>
+
+        <!-- Indikator & Panduan Penilaian -->
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+          <div class="text-amber-800 font-semibold text-sm flex items-center gap-2">
+            <i class="fas fa-scroll"></i> Indikator & Panduan Penilaian
           </div>
-          <button onclick="loadAllData()" class="mt-5 px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-700 shadow-sm transition">
-            <i class="fa-solid fa-rotate"></i> Refresh
+          <ul id="panduanList" class="text-xs text-amber-900 space-y-1 list-disc list-inside leading-relaxed">
+          </ul>
+        </div>
+
+        <!-- HASIL PENILAIAN -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hasil Penilaian</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="selectOption('Exist Good')" id="btn-Exist Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Good</button>
+            <button onclick="selectOption('Exist Not Good')" id="btn-Exist Not Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Not Good</button>
+            <button onclick="selectOption('Not Exist')" id="btn-Not Exist" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Exist</button>
+            <button onclick="selectOption('Not Available')" id="btn-Not Available" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Available</button>
+          </div>
+        </div>
+
+        <!-- AREA UPLOAD FOTO BUKTI -->
+        <div id="photoSection" class="border-2 border-dashed border-slate-300 rounded-lg p-4 bg-slate-50 text-center">
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-2">
+            Upload Foto Bukti <span id="photoMandatoryLabel" class="text-red-500">* (Wajib)</span>
+          </label>
+
+          <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" onchange="handleFileSelect(event)">
+          
+          <button type="button" onclick="document.getElementById('fileInput').click()" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-slate-100 flex items-center justify-center gap-2 mx-auto">
+            <i class="fas fa-camera text-blue-600 text-lg"></i>
+            <span>Ambil / Pilih Foto</span>
+          </button>
+
+          <!-- Preview Foto -->
+          <div id="previewContainer" class="hidden mt-3 relative inline-block">
+            <img id="imgPreview" class="h-32 w-auto rounded-lg border shadow-md object-cover">
+            <button onclick="removePhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center shadow">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tombol Navigasi -->
+        <div class="flex gap-3 pt-3">
+          <button id="btnPrev" onclick="prevItem()" class="w-1/3 bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg hover:bg-slate-300 transition">
+            ← Sebelumnya
+          </button>
+          <button id="btnNext" onclick="nextItem()" class="w-2/3 bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition">
+            Simpan & Lanjut →
           </button>
         </div>
-      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase">Total Cabang</p>
-            <h3 id="statTotalBranches" class="text-2xl font-extrabold text-slate-800">0</h3>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-            <i class="fa-solid fa-store"></i>
-          </div>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Progress</p>
-            <h3 id="statAvgProgress" class="text-2xl font-extrabold text-blue-600">0%</h3>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-            <i class="fa-solid fa-bars-progress"></i>
-          </div>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase">Avg. Compliance</p>
-            <h3 id="statAvgCompliance" class="text-2xl font-extrabold text-emerald-600">0%</h3>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-            <i class="fa-solid fa-square-check"></i>
-          </div>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase">Status Data</p>
-            <h3 id="statStatusText" class="text-sm font-bold text-slate-700">Ready</h3>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-            <i class="fa-solid fa-database"></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 class="font-bold text-slate-700 text-base flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-blue-600"></i> Detail Pencapaian Cabang
-          </h3>
-          <span id="branchCountBadge" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">Total: 0 Cabang</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
-              <tr>
-                <th class="py-4 px-5">Kode</th>
-                <th class="py-4 px-5">Nama Cabang</th>
-                <th class="py-4 px-5">Progress Overall</th>
-                <th class="py-4 px-5">Compliance Score</th>
-                <th class="py-4 px-5 text-center">Grade Final Cabang</th>
-              </tr>
-            </thead>
-            <tbody id="branchTableBody" class="divide-y divide-slate-100">
-              <tr><td colspan="5" class="py-12 text-center text-slate-400">Memuat data cabang...</td></tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
-
   </main>
 
-  <!-- MODAL PERBESAR PANDUAN -->
-  <div id="modalPanduan" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-          📜 Indikator & Panduan Penilaian Detail
-        </h3>
-        <button onclick="closeModalPanduan()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div id="modalPanduanContent" class="text-xs text-slate-700 leading-relaxed space-y-2 max-h-[60vh] overflow-y-auto"></div>
-      <button onclick="closeModalPanduan()" class="w-full py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition">
-        Tutup
-      </button>
-    </div>
-  </div>
-
   <script>
-    let WEB_APP_URL = localStorage.getItem("NOS_WEB_APP_URL") || "https://script.google.com/macros/s/AKfycbxZL6FK-qg_ybVhgnlG2uE4r9pn2JmrFsVHcwa8-04TnpxtjbRY7IfXb-off-t57ivd9w/exec";
+    // =======================================================
+    // PASTE URL WEB APP YANG ANDA COPY DARI LANGKAH 3 DI SINI
+    // =======================================================
+    const WEB_APP_URL = "PASTE_URL_WEB_APP_ANDA_DI_SINI"; 
 
-    // MASTER DATA CHECKLIST TIAP SECTION
-    const CHECKLIST_DATA = {
-      "H1 Premises": [
-        {
-          id: 1,
-          title: "1. Exterior",
-          pj: "Kebersihan Network",
-          priorityTitle: "PENGISIAN STANDAR",
-          priorityCode: "S G P",
-          wajibFoto: true,
-          panduan: [
-            "Exterior dalam keadaan: Bersih (dibersihkan 1 tahun sekali - bukti ditunjukkan), Rapih & Tidak Rusak.",
-            "Exterior terdiri dari: Fascia, Pylon / Projecting Sign, Window Display, Louver, dan Kanopi.",
-            "Kriteria PENGECATAN dinding Exterior: Tidak kusam, bebas coretan, dan tidak mengelupas."
-          ]
-        },
-        {
-          id: 2,
-          title: "2. Showroom & Display Area",
-          pj: "Kepala Cabang / Admin",
-          priorityTitle: "PENGISIAN STANDAR",
-          priorityCode: "S G P",
-          wajibFoto: true,
-          panduan: [
-            "Lantai showroom bersih, mengkilap, dan tidak berdebu.",
-            "Display unit teratur sesuai POSM standard yang berlaku.",
-            "Pencahayaan lampu teratas berfungsi 100% terang."
-          ]
-        }
-      ],
-      "H1 Process": [
-        {
-          id: 1,
-          title: "1. Handling Customer Process",
-          pj: "Frontline / CS",
-          priorityTitle: "PROSES STANDAR",
-          priorityCode: "S G P",
-          wajibFoto: false,
-          panduan: [
-            "Petugas mengucapkan salam standar Honda/NOS.",
-            "Penjelasan produk detail dan transparan."
-          ]
-        }
-      ],
-      "H1 People": [
-        {
-          id: 1,
-          title: "1. Uniform & Grooming",
-          pj: "HR / Supervisor",
-          priorityTitle: "STANDAR GROOMING",
-          priorityCode: "S G P",
-          wajibFoto: true,
-          panduan: [
-            "Pakaian seragam rapi, bersih, dan menggunakan id-card resmi.",
-            "Rambut terata rapi dan sepatu standar hitam."
-          ]
-        }
-      ],
-      "H23 Premises": [
-        {
-          id: 1,
-          title: "1. Pit Bengkel & Area AHASS",
-          pj: "Kepala Bengkel",
-          priorityTitle: "STANDAR AHASS",
-          priorityCode: "S G P",
-          wajibFoto: true,
-          panduan: [
-            "Area pit bebas dari ceceran oli.",
-            "Toolbox lengkap dan tertata rapi pada tempatnya."
-          ]
-        }
-      ],
-      "H23 Process": [
-        {
-          id: 1,
-          title: "1. Service Qualification & Workflow",
-          pj: "Service Advisor",
-          priorityTitle: "STANDAR PROSES WORKSHOP",
-          priorityCode: "S G P",
-          wajibFoto: false,
-          panduan: [
-            "Penerimaan konsumen sesuai prosedur SA.",
-            "Penjelasan estimasi waktu dan biaya secara jelas."
-          ]
-        }
-      ],
-      "H23 People": [
-        {
-          id: 1,
-          title: "1. Mekanik APD & Sertifikasi",
-          pj: "Kepala Bengkel",
-          priorityTitle: "SAFETY & PEOPLE",
-          priorityCode: "S G P",
-          wajibFoto: true,
-          panduan: [
-            "Mekanik menggunakan sepatu safety dan perlengkapan APD.",
-            "Sertifikat pelatihan mekanik ter-update."
-          ]
-        }
-      ]
+    let itemsData = [];
+    let answersStore = {}; 
+    let currentIndex = 0;
+    let selectedResult = "";
+    let uploadedPhotoBase64 = "";
+
+    window.onload = function() {
+      fetchChecklistData();
     };
 
-    let masterBranches = [
-      { kode: "JKT-001", nama: "CIKUPA", progress: 0, score: 0, grade: "BRONZE" },
-      { kode: "CKR-002", nama: "CIKARANG", progress: 0, score: 0, grade: "BRONZE" },
-      { kode: "BDG-003", nama: "SOEKARNO HATTA", progress: 0, score: 0, grade: "BRONZE" }
-    ];
-    let branchDataList = [...masterBranches];
-
-    // State Pengisian
-    let sessionAssessor = { cabangKode: '', cabangNama: '', petugas: '', jabatan: '' };
-    let selectedSectionKey = "H1 Premises";
-    let currentItemIndex = 0; // 0-indexed
-    let auditAnswers = {}; // Store: { "H1 Premises": { 0: "Exist Good", 1: "Not Exist" } }
-
-    const GRADE_RANK = { "BRONZE": 1, "SILVER": 2, "GOLD": 3, "PLATINUM": 4 };
-
-    // --- TAB SWITCHING ---
-    function switchMainTab(tab) {
-      const formView = document.getElementById("tabFormCeklis");
-      const dashView = document.getElementById("tabDashboard");
-      const navFormBtn = document.getElementById("navFormBtn");
-      const navDashBtn = document.getElementById("navDashBtn");
-
-      if (tab === 'form') {
-        formView.classList.remove("hidden");
-        dashView.classList.add("hidden");
-        navFormBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5";
-        navDashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5";
-      } else {
-        formView.classList.add("hidden");
-        dashView.classList.remove("hidden");
-        navDashBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-700 shadow-sm flex items-center gap-1.5";
-        navFormBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-blue-100 hover:text-white hover:bg-blue-600/50 transition flex items-center gap-1.5";
-        renderDashboard();
-      }
-    }
-
-    // --- STEP FLOW ---
-    function goToStep(stepNumber) {
-      document.getElementById("step1Identitas").classList.add("hidden");
-      document.getElementById("step2Section").classList.add("hidden");
-      document.getElementById("step3Audit").classList.add("hidden");
-
-      if (stepNumber === 1) {
-        document.getElementById("step1Identitas").classList.remove("hidden");
-      } else if (stepNumber === 2) {
-        document.getElementById("step2Section").classList.remove("hidden");
-        renderSectionList();
-      } else if (stepNumber === 3) {
-        document.getElementById("step3Audit").classList.remove("hidden");
-        renderAuditItem();
-      }
-    }
-
-    function handleLanjutSection(e) {
-      e.preventDefault();
-      const select = document.getElementById("inputCabang");
-      const cabangKode = select.value;
-      const selectedOptText = select.options[select.selectedIndex].text;
-      const cabangNama = selectedOptText.split(' (')[0];
-      const petugas = document.getElementById("inputNamaPetugas").value;
-      const jabatan = document.getElementById("inputJabatan").value;
-
-      sessionAssessor = { cabangKode, cabangNama, petugas, jabatan };
-      document.getElementById("badgeIdentitas").textContent = `Cabang: ${cabangNama} | ${petugas}`;
-      goToStep(2);
-    }
-
-    // --- STEP 2: RENDER SECTION LIST ---
-    function renderSectionList() {
-      const container = document.getElementById("sectionListContainer");
-      container.innerHTML = "";
-
-      Object.keys(CHECKLIST_DATA).forEach(secKey => {
-        const totalItems = CHECKLIST_DATA[secKey].length;
-        const answeredCount = auditAnswers[secKey] ? Object.keys(auditAnswers[secKey]).length : 0;
-        
-        let statusText = "Bisa Dikerjakan";
-        let statusBg = "bg-slate-100 text-slate-700";
-
-        if (answeredCount === totalItems && totalItems > 0) {
-          statusText = "Selesai";
-          statusBg = "bg-emerald-100 text-emerald-800";
-        } else if (answeredCount > 0) {
-          statusText = `${answeredCount}/${totalItems} Dikerjakan`;
-          statusBg = "bg-amber-100 text-amber-800";
-        }
-
-        const card = document.createElement("div");
-        card.className = "bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm hover:border-blue-300 transition flex justify-between items-center";
-        card.innerHTML = `
-          <div>
-            <h4 class="font-extrabold text-slate-800 text-base">${secKey}</h4>
-            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-md ${statusBg}">${statusText}</span>
-          </div>
-          <button onclick="selectSection('${secKey}')" class="px-5 py-2 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold rounded-xl text-xs transition">
-            Pilih
-          </button>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function selectSection(secKey) {
-      selectedSectionKey = secKey;
-      currentItemIndex = 0;
-      goToStep(3);
-    }
-
-    // --- STEP 3: RENDER CHECKLIST ITEM ---
-    function renderAuditItem() {
-      const items = CHECKLIST_DATA[selectedSectionKey] || [];
-      if (items.length === 0) return;
-
-      const item = items[currentItemIndex];
-      const totalItems = items.length;
-
-      document.getElementById("labelSectionTitle").textContent = `SECTION: ${selectedSectionKey.toUpperCase()}`;
-      document.getElementById("textCabangAudit").textContent = sessionAssessor.cabangNama;
-      document.getElementById("labelItemProgress").textContent = `Item ${currentItemIndex + 1} dari ${totalItems}`;
-      
-      const progPercent = Math.round(((currentItemIndex + 1) / totalItems) * 100);
-      document.getElementById("progressBar").style.width = `${progPercent}%`;
-
-      // Render Item Detail
-      document.getElementById("itemTitle").textContent = item.title;
-      document.getElementById("priorityTitle").textContent = item.priorityTitle;
-      document.getElementById("priorityCode").textContent = item.priorityCode;
-      document.getElementById("pjText").textContent = `PJ: ${item.pj}`;
-      document.getElementById("pjDetailText").textContent = item.pj;
-
-      const badgeWajibFoto = document.getElementById("badgeWajibFoto");
-      if (item.wajibFoto) badgeWajibFoto.classList.remove("hidden");
-      else badgeWajibFoto.classList.add("hidden");
-
-      // Render Panduan Text
-      const panduanBox = document.getElementById("panduanText");
-      panduanBox.innerHTML = item.panduan.map(p => `<p>• ${p}</p>`).join('');
-
-      // Check Previous Answer
-      const prevAnswer = (auditAnswers[selectedSectionKey] && auditAnswers[selectedSectionKey][currentItemIndex]) || "";
-      highlightResultButton(prevAnswer);
-
-      // Disable/Enable Prev button
-      document.getElementById("btnPrevItem").disabled = currentItemIndex === 0;
-      document.getElementById("btnPrevItem").style.opacity = currentItemIndex === 0 ? "0.5" : "1";
-    }
-
-    function selectResult(val) {
-      if (!auditAnswers[selectedSectionKey]) {
-        auditAnswers[selectedSectionKey] = {};
-      }
-      auditAnswers[selectedSectionKey][currentItemIndex] = val;
-      highlightResultButton(val);
-    }
-
-    function highlightResultButton(val) {
-      document.querySelectorAll('.opt-btn').forEach(btn => {
-        if (btn.textContent.trim() === val) {
-          btn.className = 'opt-btn p-3.5 border rounded-xl text-xs font-bold text-white bg-blue-600 border-blue-600 transition text-center shadow-sm';
-        } else {
-          btn.className = 'opt-btn p-3.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-500 hover:bg-blue-50/50 transition text-center';
-        }
-      });
-    }
-
-    function handlePrevItem() {
-      if (currentItemIndex > 0) {
-        currentItemIndex--;
-        renderAuditItem();
-      }
-    }
-
-    function handleSimpanLanjut() {
-      const currentAns = auditAnswers[selectedSectionKey] && auditAnswers[selectedSectionKey][currentItemIndex];
-      if (!currentAns) {
-        alert("Silakan pilih salah satu Hasil Penilaian terlebih dahulu.");
+    function fetchChecklistData() {
+      if(!WEB_APP_URL || WEB_APP_URL.includes("PASTE_URL_WEB_APP")) {
+        alert("URL Web App belum diisi di index.html! Silakan paste URL dari Langkah 3.");
         return;
       }
 
-      const items = CHECKLIST_DATA[selectedSectionKey] || [];
-      if (currentItemIndex < items.length - 1) {
-        currentItemIndex++;
-        renderAuditItem();
+      fetch(`${WEB_APP_URL}?action=getChecklist`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('loading').classList.add('hidden');
+          
+          itemsData = [];
+          for (let sec in data) {
+            data[sec].forEach(item => {
+              item.sectionName = sec;
+              itemsData.push(item);
+            });
+          }
+
+          if(itemsData.length > 0) {
+            document.getElementById('app').classList.remove('hidden');
+            renderItem(0);
+          } else {
+            alert("Data checklist kosong atau tab 'Master_Checklist' tidak ditemukan.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Gagal mengambil data dari Google Sheet. Pastikan akses deployment sudah 'Anyone'!");
+        });
+    }
+
+    function renderItem(index) {
+      const item = itemsData[index];
+      if(!item) return;
+
+      const saved = answersStore[index] || {};
+      selectedResult = saved.hasil || "";
+      uploadedPhotoBase64 = saved.photoBase64 || "";
+
+      document.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.className = "opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition";
+      });
+      if(selectedResult) {
+        const activeBtn = document.getElementById(`btn-${selectedResult}`);
+        if(activeBtn) activeBtn.className = "opt-btn p-3 text-sm font-bold rounded-lg border-2 border-blue-600 bg-blue-600 text-white transition";
+      }
+
+      if(uploadedPhotoBase64) {
+        document.getElementById('imgPreview').src = uploadedPhotoBase64;
+        document.getElementById('previewContainer').classList.remove('hidden');
       } else {
-        alert(`🎉 Seluruh item pada section ${selectedSectionKey} telah selesai diisi! Data berhasil disimpan.`);
-        submitSectionData();
-        goToStep(2);
+        document.getElementById('previewContainer').classList.add('hidden');
+        document.getElementById('fileInput').value = "";
+      }
+
+      document.getElementById('sectionName').innerText = `SECTION: ${item.sectionName || 'H1 PREMISES'}`;
+      document.getElementById('itemCounter').innerText = `Item ${index + 1} dari ${itemsData.length}`;
+      document.getElementById('badgePriority').innerText = item.priorityCode || "S G P";
+      document.getElementById('itemTitle').innerText = `${item.noItem || (index + 1)}. ${item.title}`;
+      document.getElementById('textPJ').innerText = item.pj || "-";
+
+      const badgeFoto = document.getElementById('badgeFoto');
+      const photoMandatoryLabel = document.getElementById('photoMandatoryLabel');
+      if(item.wajibFoto) {
+        badgeFoto.className = "bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1";
+        document.getElementById('textFoto').innerText = "Wajib Foto Bukti";
+        photoMandatoryLabel.style.display = "inline";
+      } else {
+        badgeFoto.className = "bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1";
+        document.getElementById('textFoto').innerText = "Foto Opsional";
+        photoMandatoryLabel.style.display = "none";
+      }
+
+      const panduanList = document.getElementById('panduanList');
+      panduanList.innerHTML = "";
+      if(Array.isArray(item.panduan) && item.panduan.length > 0) {
+        item.panduan.forEach(p => {
+          if(p.trim() !== "") {
+            const li = document.createElement('li');
+            li.innerText = p;
+            panduanList.appendChild(li);
+          }
+        });
+      }
+
+      document.getElementById('btnPrev').disabled = (index === 0);
+      document.getElementById('btnPrev').style.opacity = (index === 0) ? "0.5" : "1";
+      
+      const btnNext = document.getElementById('btnNext');
+      if(index === itemsData.length - 1) {
+        btnNext.innerText = "Kirim Semua Hasil Audit 🚀";
+        btnNext.className = "w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-green-700 transition";
+      } else {
+        btnNext.innerText = "Simpan & Lanjut →";
+        btnNext.className = "w-2/3 bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition";
       }
     }
 
-    // --- SAVE / POST DATA TO GOOGLE APPS SCRIPT ---
-    async function submitSectionData() {
-      if (!WEB_APP_URL) return;
+    function selectOption(val) {
+      selectedResult = val;
+      document.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.className = "opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition";
+      });
+      const activeBtn = document.getElementById(`btn-${val}`);
+      if(activeBtn) {
+        activeBtn.className = "opt-btn p-3 text-sm font-bold rounded-lg border-2 border-blue-600 bg-blue-600 text-white transition";
+      }
+    }
 
-      const payload = {
-        cabangKode: sessionAssessor.cabangKode,
-        cabangNama: sessionAssessor.cabangNama,
-        petugas: sessionAssessor.petugas,
-        jabatan: sessionAssessor.jabatan,
-        section: selectedSectionKey,
-        answers: auditAnswers[selectedSectionKey]
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedPhotoBase64 = e.target.result;
+          document.getElementById('imgPreview').src = e.target.result;
+          document.getElementById('previewContainer').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function removePhoto() {
+      uploadedPhotoBase64 = "";
+      document.getElementById('fileInput').value = "";
+      document.getElementById('previewContainer').classList.add('hidden');
+    }
+
+    function nextItem() {
+      const currentItem = itemsData[currentIndex];
+
+      if(!selectedResult) {
+        alert("Silakan pilih Hasil Penilaian terlebih dahulu.");
+        return;
+      }
+
+      if(currentItem.wajibFoto && !uploadedPhotoBase64) {
+        alert("Item ini WAJIB melampirkan foto bukti!");
+        return;
+      }
+
+      let poin = 0;
+      if(selectedResult === "Exist Good") poin = currentItem.poinStandar || 10;
+
+      answersStore[currentIndex] = {
+        idChecklist: currentItem.id,
+        section: currentItem.sectionName,
+        title: currentItem.title,
+        hasil: selectedResult,
+        poin: poin,
+        photoBase64: uploadedPhotoBase64
       };
 
-      try {
-        await fetch(WEB_APP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.error("Gagal mengirim data audit:", err);
+      if(currentIndex < itemsData.length - 1) {
+        currentIndex++;
+        renderItem(currentIndex);
+      } else {
+        submitAuditData();
       }
     }
 
-    // --- MODAL PANDUAN ---
-    function openModalPanduan() {
-      const items = CHECKLIST_DATA[selectedSectionKey] || [];
-      const item = items[currentItemIndex];
-      if (!item) return;
-
-      const modalContent = document.getElementById("modalPanduanContent");
-      modalContent.innerHTML = `
-        <p class="font-bold text-slate-800 text-sm mb-2">${item.title}</p>
-        <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-900 font-medium mb-3">
-          <strong>Penanggung Jawab:</strong> ${item.pj}
-        </div>
-        <div class="space-y-2">
-          ${item.panduan.map(p => `<p class="flex items-start gap-1.5"><span class="text-blue-600 font-bold">•</span> <span>${p}</span></p>`).join('')}
-        </div>
-      `;
-      document.getElementById("modalPanduan").classList.remove("hidden");
+    function prevItem() {
+      if(currentIndex > 0) {
+        currentIndex--;
+        renderItem(currentIndex);
+      }
     }
 
-    function closeModalPanduan() {
-      document.getElementById("modalPanduan").classList.add("hidden");
-    }
+    function submitAuditData() {
+      if(!confirm("Apakah Anda yakin ingin mengirimkan seluruh hasil audit ini ke Google Sheets?")) return;
 
-    // --- DASHBOARD FUNCTIONS ---
-    async function loadAllData() {
-      populateDropdowns();
-      if (!WEB_APP_URL) return;
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('loadingText').innerText = "Mengirim data audit & menyimpan foto ke Google Drive...";
 
-      document.getElementById("statStatusText").textContent = "Syncing...";
-      try {
-        const response = await fetch(WEB_APP_URL);
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data) && data.length > 0) {
-            branchDataList = data;
-            populateDropdowns();
-            renderDashboard();
-          }
+      const payload = {
+        cabang: "CIKARANG",
+        auditor: "Auditor Cabang",
+        answers: Object.values(answersStore)
+      };
+
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        document.getElementById('loading').classList.add('hidden');
+        if(res.status === "SUCCESS") {
+          alert("BERHASIL! Data audit dan foto bukti telah tersimpan di Google Sheets & Google Drive.");
+          location.reload();
+        } else {
+          alert("Gagal menyimpan data: " + res.error);
+          document.getElementById('app').classList.remove('hidden');
         }
-        document.getElementById("statStatusText").textContent = "Connected";
-      } catch (err) {
-        document.getElementById("statStatusText").textContent = "Local Mode";
-      }
-    }
-
-    function populateDropdowns() {
-      const selectForm = document.getElementById("inputCabang");
-      const selectDash = document.getElementById("filterCabang");
-
-      if (selectForm) {
-        selectForm.innerHTML = `<option value="">-- Pilih Cabang --</option>`;
-        branchDataList.forEach(b => {
-          selectForm.innerHTML += `<option value="${b.kode}">${b.nama} (${b.kode})</option>`;
-        });
-      }
-
-      if (selectDash) {
-        selectDash.innerHTML = `<option value="ALL">Semua Cabang (${branchDataList.length})</option>`;
-        branchDataList.forEach(b => {
-          selectDash.innerHTML += `<option value="${b.kode}">${b.nama} (${b.kode})</option>`;
-        });
-      }
-    }
-
-    function renderDashboard() {
-      const filterVal = document.getElementById("filterCabang") ? document.getElementById("filterCabang").value : "ALL";
-      let filtered = [...branchDataList];
-
-      if (filterVal !== "ALL") {
-        filtered = filtered.filter(b => b.kode === filterVal);
-      }
-
-      filtered.sort((a, b) => (GRADE_RANK[a.grade] || 1) - (GRADE_RANK[b.grade] || 1));
-
-      const tbody = document.getElementById("branchTableBody");
-      document.getElementById("branchCountBadge").textContent = `Total: ${filtered.length} Cabang`;
-      document.getElementById("statTotalBranches").textContent = branchDataList.length;
-
-      if (branchDataList.length > 0) {
-        const avgProg = Math.round(branchDataList.reduce((acc, c) => acc + (c.progress || 0), 0) / branchDataList.length);
-        const avgScore = Math.round(branchDataList.reduce((acc, c) => acc + (c.score || 0), 0) / branchDataList.length);
-        document.getElementById("statAvgProgress").textContent = `${avgProg}%`;
-        document.getElementById("statAvgCompliance").textContent = `${avgScore}%`;
-      }
-
-      tbody.innerHTML = "";
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Tidak ada data cabang.</td></tr>`;
-        return;
-      }
-
-      filtered.forEach(b => {
-        let badgeClass = "badge-bronze";
-        let badgeIcon = "fa-award";
-        if (b.grade === "PLATINUM") { badgeClass = "badge-platinum"; badgeIcon = "fa-gem"; }
-        else if (b.grade === "GOLD") { badgeClass = "badge-gold"; badgeIcon = "fa-crown"; }
-        else if (b.grade === "SILVER") { badgeClass = "badge-silver"; badgeIcon = "fa-medal"; }
-
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-blue-50/50 transition border-b border-slate-100";
-        tr.innerHTML = `
-          <td class="py-3.5 px-5 font-mono text-xs font-bold text-slate-500">${b.kode}</td>
-          <td class="py-3.5 px-5 font-bold text-slate-800 text-base">${b.nama}</td>
-          <td class="py-3.5 px-5">
-            <div class="flex items-center gap-3">
-              <div class="w-28 bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${b.progress || 0}%"></div>
-              </div>
-              <span class="font-bold text-xs text-slate-700">${b.progress || 0}%</span>
-            </div>
-          </td>
-          <td class="py-3.5 px-5 font-bold text-slate-800 text-base">${b.score || 0}%</td>
-          <td class="py-3.5 px-5 text-center">
-            <span class="badge-base ${badgeClass}">
-              <i class="fa-solid ${badgeIcon}"></i> ${b.grade || 'BRONZE'}
-            </span>
-          </td>
-        `;
-        tbody.appendChild(tr);
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        alert("Terjadi kesalahan koneksi saat mengirim data.");
       });
     }
-
-    window.addEventListener("DOMContentLoaded", loadAllData);
   </script>
 </body>
 </html>
