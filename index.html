@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <!-- TAB MENU BUTTONS (AKAN MUNCUL SETELAH INPUT IDENTITAS) -->
+      <!-- TAB MENU BUTTONS -->
       <div id="navTabs" class="hidden flex bg-blue-700/60 p-1 rounded-lg gap-1 border border-blue-500/30">
         <button id="btnTabForm" onclick="switchTab('form')" class="px-4 py-1.5 rounded-md text-xs font-bold transition bg-white text-blue-700 shadow">
           <i class="fas fa-list-check mr-1"></i> Form Ceklis
@@ -36,7 +36,7 @@
         </button>
       </div>
 
-      <!-- BADGE CABANG & AUDITOR (DINAMIS) -->
+      <!-- BADGE CABANG & AUDITOR -->
       <div id="headerBadges" class="hidden flex items-center gap-2">
         <span id="auditorBadge" class="bg-blue-800 text-white text-xs px-3 py-1 rounded-full font-medium border border-blue-400/30">
           <i class="fas fa-user mr-1 text-amber-300"></i> <span id="textHeaderAuditor">-</span>
@@ -56,9 +56,7 @@
       <p id="loadingText" class="text-slate-600 font-medium">Memuat data dari Google Sheet...</p>
     </div>
 
-    <!-- ========================================== -->
-    <!-- HALAMAN AWAL: FORM IDENTITAS AUDIT (HOME)  -->
-    <!-- ========================================== -->
+    <!-- HALAMAN AWAL: FORM IDENTITAS AUDIT -->
     <div id="viewHome" class="hidden max-w-lg mx-auto my-8">
       <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 space-y-6">
         <div class="text-center space-y-2">
@@ -70,7 +68,6 @@
         </div>
 
         <form onsubmit="startAudit(event)" class="space-y-4">
-          <!-- Pilih Cabang -->
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilih Cabang <span class="text-red-500">*</span></label>
             <div class="relative">
@@ -84,12 +81,10 @@
                 <option value="JAKARTA">JAKARTA</option>
                 <option value="SURABAYA">SURABAYA</option>
                 <option value="SEMARANG">SEMARANG</option>
-                <!-- Tambahkan cabang lain jika diperlukan -->
               </select>
             </div>
           </div>
 
-          <!-- Nama Pengisi -->
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nama Pemeriksa / Auditor <span class="text-red-500">*</span></label>
             <div class="relative">
@@ -100,7 +95,6 @@
             </div>
           </div>
 
-          <!-- Jabatan -->
           <div>
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Jabatan <span class="text-red-500">*</span></label>
             <div class="relative">
@@ -127,12 +121,9 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- TAB 1: FORM CHECKLIST VIEW                 -->
-    <!-- ========================================== -->
+    <!-- TAB 1: FORM CHECKLIST VIEW -->
     <div id="viewForm" class="hidden space-y-4">
       
-      <!-- SECTION SELECTOR PANEL -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-2">
           <i class="fas fa-layer-group text-blue-600"></i>
@@ -145,7 +136,6 @@
         </div>
       </div>
 
-      <!-- ITEM CARD FORM -->
       <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
         
         <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
@@ -221,79 +211,84 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- TAB 2: DASHBOARD LAPORAN VIEW              -->
-    <!-- ========================================== -->
+    <!-- TAB 2: DASHBOARD LAPORAN VIEW -->
     <div id="viewDashboard" class="hidden space-y-6">
-      
-      <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-        <div>
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Skor Kelayakan Cabang</span>
-          <div class="flex items-baseline gap-2">
-            <h2 id="dashCompliancePercent" class="text-4xl font-extrabold text-blue-600">0%</h2>
-            <span class="text-xs text-slate-500 font-medium">Compliance Rate</span>
+
+      <!-- EXECUTIVE SUMMARY & RANKING BAR -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-6 w-full md:w-auto border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-8">
+          <div>
+            <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Skor Kelayakan</p>
+            <p class="text-4xl font-extrabold text-slate-800 mt-1" id="dashCompliancePercent">0%</p>
+          </div>
+          <div class="h-10 w-[1px] bg-slate-200"></div>
+          <div>
+            <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Predikat Audit</p>
+            <span id="dashGradeText" class="inline-block px-3 py-1 text-xs font-bold rounded-md bg-amber-100 text-amber-800 mt-1">BRONZE</span>
           </div>
         </div>
 
-        <div id="dashBadgeGrade" class="badge-bronze px-5 py-2.5 rounded-xl text-center shadow-md">
-          <span class="text-xs font-bold block uppercase tracking-widest opacity-80">Predikat Audit</span>
-          <span id="dashGradeText" class="text-lg font-black tracking-wide">BRONZE</span>
+        <!-- RANKING CABANG -->
+        <div class="flex items-center gap-6 w-full md:w-auto">
+          <div class="text-left md:text-right">
+            <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Ranking Cabang</p>
+            <p class="text-2xl font-black text-slate-700 mt-1" id="dashRanking">#1 <span class="text-xs font-normal text-slate-400">/ 5 Cabang</span></p>
+          </div>
         </div>
       </div>
 
+      <!-- METRIC CARDS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
-          <span class="text-xs text-slate-500 font-semibold">Total Item Evaluasi</span>
-          <div id="dashTotalEvaluated" class="text-2xl font-bold text-slate-800 mt-1">0 / 415</div>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-500">Total Item Evaluasi</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1" id="dashTotalEvaluated">0 / 415</p>
         </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
-          <span class="text-xs text-emerald-600 font-semibold">Exist Good (EG)</span>
-          <div id="dashCountEG" class="text-2xl font-bold text-emerald-700 mt-1">0</div>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
+          <p class="text-xs font-semibold text-emerald-600">Exist Good (EG)</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1" id="dashCountEG">0</p>
         </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
-          <span class="text-xs text-amber-600 font-semibold">Exist Not Good (ENG)</span>
-          <div id="dashCountENG" class="text-2xl font-bold text-amber-700 mt-1">0</div>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+          <p class="text-xs font-semibold text-amber-600">Exist Not Good (ENG)</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1" id="dashCountENG">0</p>
         </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-red-500">
-          <span class="text-xs text-red-600 font-semibold">Not Exist (NE)</span>
-          <div id="dashCountNE" class="text-2xl font-bold text-red-700 mt-1">0</div>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
+          <p class="text-xs font-semibold text-rose-600">Not Exist (NE)</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1" id="dashCountNE">0</p>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 p-5">
-        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i class="fas fa-list-ol text-blue-600"></i> Performa Compliance per Section
-        </h3>
+      <!-- TABEL PERFORMA PER SECTION -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50">
+          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Performa Compliance Per Section</h3>
+        </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
+          <table class="w-full text-left border-collapse text-sm">
             <thead>
-              <tr class="bg-slate-100 text-slate-600 uppercase">
-                <th class="p-3 rounded-l">Section</th>
-                <th class="p-3">Total Item</th>
-                <th class="p-3">Exist Good</th>
-                <th class="p-3">Temuan (ENG/NE)</th>
-                <th class="p-3">% Compliance</th>
+              <tr class="bg-slate-100 text-slate-600 text-xs uppercase font-bold border-b border-slate-200">
+                <th class="p-3">Section</th>
+                <th class="p-3 text-center">Total Item</th>
+                <th class="p-3 text-center">Exist Good</th>
+                <th class="p-3 text-center">Temuan (ENG/NE)</th>
+                <th class="p-3 text-center">% Compliance</th>
               </tr>
             </thead>
-            <tbody id="tableSectionBody" class="divide-y divide-slate-100">
+            <tbody id="tableSectionBody" class="divide-y divide-slate-100 font-medium text-slate-700">
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 p-5">
-        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i class="fas fa-exclamation-triangle text-red-500"></i> Daftar Temuan Memerlukan Perbaikan
-        </h3>
+      <!-- DAFTAR TEMUAN MEMERLUKAN PERBAIKAN -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <h3 class="text-sm font-bold text-rose-600 uppercase tracking-wide border-b border-slate-100 pb-3 mb-3">Daftar Temuan Memerlukan Perbaikan</h3>
         <div id="listTemuanContainer" class="space-y-3 max-h-96 overflow-y-auto pr-1">
         </div>
       </div>
 
+      <!-- SUBMIT BUTTON -->
       <div class="text-center pt-2">
-        <button type="button" onclick="submitAuditData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mx-auto">
+        <button type="button" id="btnSubmitAll" onclick="submitAuditData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mx-auto">
           <i class="fas fa-paper-plane"></i>
           <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>
         </button>
@@ -304,9 +299,7 @@
   </main>
 
   <script>
-    // =======================================================
     // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
-    // =======================================================
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfFJ5ASoP1MaW4eUqlmOuy3MrQ5m2BgiyNN_JrBjwwIq_aS_arNUgsPp5fq1ivkDesUw/exec"; 
 
     let rawDataBySection = {};
@@ -410,7 +403,6 @@
           });
 
           if(allItems.length > 0) {
-            // Tampilkan Home View untuk isi identitas
             document.getElementById('viewHome').classList.remove('hidden');
           } else {
             alert("Data checklist kosong.");
@@ -599,12 +591,20 @@
       document.getElementById('dashCountENG').innerText = countENG;
       document.getElementById('dashCountNE').innerText = countNE;
 
-      const badgeBox = document.getElementById('dashBadgeGrade');
       const gradeText = document.getElementById('dashGradeText');
-      if(compPercent >= 90) { badgeBox.className = "badge-platinum px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "PLATINUM"; }
-      else if(compPercent >= 80) { badgeBox.className = "badge-gold px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "GOLD"; }
-      else if(compPercent >= 70) { badgeBox.className = "badge-silver px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "SILVER"; }
-      else { badgeBox.className = "badge-bronze px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "BRONZE"; }
+      if (compPercent >= 90) {
+        gradeText.innerText = "PLATINUM";
+        gradeText.className = "inline-block px-3 py-1 text-xs font-bold rounded-md bg-sky-100 text-sky-800 mt-1";
+      } else if (compPercent >= 80) {
+        gradeText.innerText = "GOLD";
+        gradeText.className = "inline-block px-3 py-1 text-xs font-bold rounded-md bg-amber-100 text-amber-800 mt-1";
+      } else if (compPercent >= 70) {
+        gradeText.innerText = "SILVER";
+        gradeText.className = "inline-block px-3 py-1 text-xs font-bold rounded-md bg-slate-200 text-slate-800 mt-1";
+      } else {
+        gradeText.innerText = "BRONZE";
+        gradeText.className = "inline-block px-3 py-1 text-xs font-bold rounded-md bg-amber-100 text-amber-800 mt-1";
+      }
 
       const tBody = document.getElementById('tableSectionBody');
       tBody.innerHTML = "";
@@ -625,12 +625,13 @@
         let sRate = sTotalVal > 0 ? Math.round((sEG / sTotalVal) * 100) : 0;
 
         let tr = document.createElement('tr');
+        tr.className = "border-b border-slate-100 hover:bg-slate-50";
         tr.innerHTML = `
           <td class="p-3 font-bold text-slate-700">${sec}</td>
-          <td class="p-3 text-slate-500">${secItems.length}</td>
-          <td class="p-3 text-emerald-600 font-bold">${sEG}</td>
-          <td class="p-3 text-amber-600 font-bold">${sENG + sNE}</td>
-          <td class="p-3"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-bold">${sRate}%</span></td>
+          <td class="p-3 text-center text-slate-500">${secItems.length}</td>
+          <td class="p-3 text-center text-emerald-600 font-bold">${sEG}</td>
+          <td class="p-3 text-center text-rose-600 font-bold">${sENG + sNE}</td>
+          <td class="p-3 text-center"><span class="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-md font-bold border border-blue-200">${sRate}%</span></td>
         `;
         tBody.appendChild(tr);
       });
@@ -663,18 +664,16 @@
         return;
       }
 
-      if(!confirm(`Apakah Anda yakin ingin mengirim ${answersList.length} hasil penilaian ke Google Sheets?`)) return;
-
-      document.getElementById('viewDashboard').classList.add('hidden');
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('loadingText').innerText = "Mengirim data audit & menyimpan foto ke Google Drive...";
-
-      // Mengirimkan data identitas dinamis yang diisi dari Form Home
       const payload = {
-        cabang: auditMeta.cabang || "CIKARANG",
-        auditor: `${auditMeta.auditor} (${auditMeta.jabatan})`,
+        cabang: auditMeta.cabang,
+        auditor: auditMeta.auditor,
+        jabatan: auditMeta.jabatan,
         answers: answersList
       };
+
+      const btnSubmit = document.getElementById('btnSubmitAll');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>Mengirim Data...</span>`;
 
       fetch(WEB_APP_URL, {
         method: "POST",
@@ -682,20 +681,20 @@
       })
       .then(res => res.json())
       .then(res => {
-        document.getElementById('loading').classList.add('hidden');
         if(res.status === "SUCCESS") {
-          alert("BERHASIL! Seluruh hasil audit dan foto bukti tersimpan di Google Sheets & Drive.");
+          alert("Data audit berhasil dikirim ke Google Sheets!");
           location.reload();
         } else {
-          alert("Gagal menyimpan data: " + res.error);
-          document.getElementById('viewDashboard').classList.remove('hidden');
+          alert("Gagal menyimpan data: " + (res.error || "Terjadi kesalahan"));
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>`;
         }
       })
       .catch(err => {
         console.error(err);
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('viewDashboard').classList.remove('hidden');
-        alert("Terjadi kesalahan koneksi.");
+        alert("Terjadi kesalahan koneksi saat mengirim data.");
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>`;
       });
     }
   </script>
