@@ -15,7 +15,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
-  <!-- HEADER BAR UTAMA + TAB NAVIGATION -->
+  <!-- HEADER BAR UTAMA -->
   <header class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-3">
@@ -26,8 +26,8 @@
         </div>
       </div>
 
-      <!-- TAB MENU BUTTONS -->
-      <div class="flex bg-blue-700/60 p-1 rounded-lg gap-1 border border-blue-500/30">
+      <!-- TAB MENU BUTTONS (AKAN MUNCUL SETELAH INPUT IDENTITAS) -->
+      <div id="navTabs" class="hidden flex bg-blue-700/60 p-1 rounded-lg gap-1 border border-blue-500/30">
         <button id="btnTabForm" onclick="switchTab('form')" class="px-4 py-1.5 rounded-md text-xs font-bold transition bg-white text-blue-700 shadow">
           <i class="fas fa-list-check mr-1"></i> Form Ceklis
         </button>
@@ -36,10 +36,15 @@
         </button>
       </div>
 
-      <!-- BADGE CABANG -->
-      <span id="locationBadge" class="bg-blue-900 text-amber-300 text-xs px-3 py-1 rounded-full font-extrabold tracking-wider border border-blue-400/30">
-        📍 CIKARANG
-      </span>
+      <!-- BADGE CABANG & AUDITOR (DINAMIS) -->
+      <div id="headerBadges" class="hidden flex items-center gap-2">
+        <span id="auditorBadge" class="bg-blue-800 text-white text-xs px-3 py-1 rounded-full font-medium border border-blue-400/30">
+          <i class="fas fa-user mr-1 text-amber-300"></i> <span id="textHeaderAuditor">-</span>
+        </span>
+        <span id="locationBadge" class="bg-blue-900 text-amber-300 text-xs px-3 py-1 rounded-full font-extrabold tracking-wider border border-blue-400/30">
+          📍 CIKARANG
+        </span>
+      </div>
     </div>
   </header>
 
@@ -48,8 +53,79 @@
     <!-- LOADING SCREEN -->
     <div id="loading" class="text-center py-20 bg-white rounded-xl shadow-md border border-slate-200 my-4">
       <i class="fas fa-circle-notch fa-spin text-4xl text-blue-600 mb-3"></i>
-      <p id="loadingText" class="text-slate-600 font-medium">Memuat 415 item data dari Google Sheet...</p>
+      <p id="loadingText" class="text-slate-600 font-medium">Memuat data dari Google Sheet...</p>
     </div>
+
+    <!-- ========================================== -->
+    <!-- HALAMAN AWAL: FORM IDENTITAS AUDIT (HOME)  -->
+    <!-- ========================================== -->
+    <div id="viewHome" class="hidden max-w-lg mx-auto my-8">
+      <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 space-y-6">
+        <div class="text-center space-y-2">
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-2">
+            <i class="fas fa-id-card"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-800">Form Identitas Audit</h2>
+          <p class="text-xs text-slate-500">Silakan lengkapi data cabang dan pemeriksa sebelum memulai audit lapangan.</p>
+        </div>
+
+        <form onsubmit="startAudit(event)" class="space-y-4">
+          <!-- Pilih Cabang -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pilih Cabang <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fas fa-store"></i>
+              </span>
+              <select id="inputCabang" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
+                <option value="" disabled selected>-- Pilih Cabang --</option>
+                <option value="CIKARANG">CIKARANG</option>
+                <option value="BANDUNG">BANDUNG</option>
+                <option value="JAKARTA">JAKARTA</option>
+                <option value="SURABAYA">SURABAYA</option>
+                <option value="SEMARANG">SEMARANG</option>
+                <!-- Tambahkan cabang lain jika diperlukan -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Nama Pengisi -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nama Pemeriksa / Auditor <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fas fa-user-edit"></i>
+              </span>
+              <input type="text" id="inputAuditor" required placeholder="Ketik nama lengkap Anda" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
+            </div>
+          </div>
+
+          <!-- Jabatan -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Jabatan <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fas fa-user-tie"></i>
+              </span>
+              <select id="inputJabatan" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
+                <option value="" disabled selected>-- Pilih Jabatan --</option>
+                <option value="Auditor Internal">Auditor Internal</option>
+                <option value="Kepala Cabang">Kepala Cabang</option>
+                <option value="Supervisor Operational">Supervisor Operational</option>
+                <option value="PIC Quality Control">PIC Quality Control</option>
+                <option value="Staff Operations">Staff Operations</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm mt-2">
+            <span>Mulai Pengisian Ceklis</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
 
     <!-- ========================================== -->
     <!-- TAB 1: FORM CHECKLIST VIEW                 -->
@@ -62,7 +138,6 @@
           <i class="fas fa-layer-group text-blue-600"></i>
           <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">Pilih Section:</span>
           <select id="sectionFilter" onchange="changeSection(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg p-2 font-bold focus:ring-blue-500 focus:border-blue-500">
-            <!-- Pilihan section dimasukkan dinamis lewat JS -->
           </select>
         </div>
         <div id="sectionProgressText" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
@@ -73,7 +148,6 @@
       <!-- ITEM CARD FORM -->
       <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
         
-        <!-- Sub Header Item -->
         <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
           <div>
             <span id="sectionName" class="text-xs font-bold text-blue-600 uppercase tracking-wider">SECTION: H1 PREMISES</span>
@@ -84,7 +158,6 @@
 
         <div class="p-5 space-y-5">
           
-          <!-- Badges Foto & PJ -->
           <div class="flex flex-wrap gap-2">
             <span id="badgeFoto" class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1">
               <i class="fas fa-camera"></i> <span id="textFoto">Wajib Foto Bukti</span>
@@ -94,10 +167,8 @@
             </span>
           </div>
 
-          <!-- Judul Item -->
           <h3 id="itemTitle" class="text-xl font-bold text-slate-800">1. Nama Item</h3>
 
-          <!-- Indikator & Panduan Penilaian -->
           <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
             <div class="text-amber-800 font-semibold text-sm flex items-center gap-2">
               <i class="fas fa-scroll"></i> Indikator & Panduan Penilaian
@@ -106,18 +177,16 @@
             </ul>
           </div>
 
-          <!-- HASIL PENILAIAN -->
           <div>
             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hasil Penilaian</label>
             <div class="grid grid-cols-2 gap-3">
-              <button onclick="selectOption('Exist Good')" id="btn-Exist Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Good</button>
-              <button onclick="selectOption('Exist Not Good')" id="btn-Exist Not Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Not Good</button>
-              <button onclick="selectOption('Not Exist')" id="btn-Not Exist" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Exist</button>
-              <button onclick="selectOption('Not Available')" id="btn-Not Available" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Available</button>
+              <button type="button" onclick="selectOption('Exist Good')" id="btn-Exist Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Good</button>
+              <button type="button" onclick="selectOption('Exist Not Good')" id="btn-Exist Not Good" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Exist Not Good</button>
+              <button type="button" onclick="selectOption('Not Exist')" id="btn-Not Exist" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Exist</button>
+              <button type="button" onclick="selectOption('Not Available')" id="btn-Not Available" class="opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition">Not Available</button>
             </div>
           </div>
 
-          <!-- AREA UPLOAD FOTO BUKTI -->
           <div id="photoSection" class="border-2 border-dashed border-slate-300 rounded-lg p-4 bg-slate-50 text-center">
             <label class="block text-xs font-bold text-slate-600 uppercase mb-2">
               Upload Foto Bukti <span id="photoMandatoryLabel" class="text-red-500">* (Wajib)</span>
@@ -130,21 +199,19 @@
               <span>Ambil / Pilih Foto</span>
             </button>
 
-            <!-- Preview Foto -->
             <div id="previewContainer" class="hidden mt-3 relative inline-block">
               <img id="imgPreview" class="h-36 w-auto rounded-lg border shadow-md object-cover">
-              <button onclick="removePhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center shadow">
+              <button type="button" onclick="removePhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center shadow">
                 <i class="fas fa-times"></i>
               </button>
             </div>
           </div>
 
-          <!-- Tombol Navigasi Form -->
           <div class="flex gap-3 pt-3">
-            <button id="btnPrev" onclick="prevItem()" class="w-1/3 bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg hover:bg-slate-300 transition">
+            <button type="button" id="btnPrev" onclick="prevItem()" class="w-1/3 bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg hover:bg-slate-300 transition">
               ← Sebelumnya
             </button>
-            <button id="btnNext" onclick="nextItem()" class="w-2/3 bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition">
+            <button type="button" id="btnNext" onclick="nextItem()" class="w-2/3 bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition">
               Simpan & Lanjut →
             </button>
           </div>
@@ -159,7 +226,6 @@
     <!-- ========================================== -->
     <div id="viewDashboard" class="hidden space-y-6">
       
-      <!-- SKOR & BADGE COMPLIANCE UTAMA -->
       <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-wrap justify-between items-center gap-4">
         <div>
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Skor Kelayakan Cabang</span>
@@ -175,7 +241,6 @@
         </div>
       </div>
 
-      <!-- METRIC CARDS -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
           <span class="text-xs text-slate-500 font-semibold">Total Item Evaluasi</span>
@@ -198,7 +263,6 @@
         </div>
       </div>
 
-      <!-- REKAPITULASI PER SECTION -->
       <div class="bg-white rounded-xl shadow-md border border-slate-200 p-5">
         <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
           <i class="fas fa-list-ol text-blue-600"></i> Performa Compliance per Section
@@ -215,25 +279,21 @@
               </tr>
             </thead>
             <tbody id="tableSectionBody" class="divide-y divide-slate-100">
-              <!-- Baris Section Di-generate via JS -->
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- DAFTAR TEMUAN (NEED ACTION) -->
       <div class="bg-white rounded-xl shadow-md border border-slate-200 p-5">
         <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-4 flex items-center gap-2">
           <i class="fas fa-exclamation-triangle text-red-500"></i> Daftar Temuan Memerlukan Perbaikan
         </h3>
         <div id="listTemuanContainer" class="space-y-3 max-h-96 overflow-y-auto pr-1">
-          <!-- Item Temuan Di-generate via JS -->
         </div>
       </div>
 
-      <!-- TOMBOL SUBMIT SEMUA HASIL -->
       <div class="text-center pt-2">
-        <button onclick="submitAuditData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mx-auto">
+        <button type="button" onclick="submitAuditData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mx-auto">
           <i class="fas fa-paper-plane"></i>
           <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>
         </button>
@@ -247,21 +307,57 @@
     // =======================================================
     // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
     // =======================================================
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwHd6NWMIwG5ZlCBNZc3-WFh-4SEFwlxP1cMR8xMi1_9SZux14ehlgJ_D7z75bGqofgWA/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwHd6NWMiWG5Z1CBNZc3-WFh-4SEFwlXP1cMR8xMi1_9SZux14ehlgJ_D7z75bGqofgWA/exec"; 
 
     let rawDataBySection = {};
     let allItems = [];
     let sectionList = [];
-    let currentSectionIndex = 0;
     let filteredItems = [];
-    let currentIndex = 0; // Index di dalam section terpilih
-    let answersStore = {}; // Menampung hasil jawaban local
+    let currentIndex = 0; 
+    let answersStore = {}; 
+
+    // Metadata Identitas Audit
+    let auditMeta = {
+      cabang: "",
+      auditor: "",
+      jabatan: ""
+    };
 
     window.onload = function() {
       fetchChecklistData();
     };
 
-    // 1. SWITCH TAB FUNCTION
+    // 1. START AUDIT FROM HOME FORM
+    function startAudit(event) {
+      event.preventDefault();
+      
+      const cabang = document.getElementById('inputCabang').value;
+      const auditor = document.getElementById('inputAuditor').value.trim();
+      const jabatan = document.getElementById('inputJabatan').value;
+
+      if(!cabang || !auditor || !jabatan) {
+        alert("Silakan lengkapi seluruh data identitas!");
+        return;
+      }
+
+      auditMeta.cabang = cabang;
+      auditMeta.auditor = auditor;
+      auditMeta.jabatan = jabatan;
+
+      // Update Header Text & Badges
+      document.getElementById('textHeaderAuditor').innerText = `${auditor} (${jabatan})`;
+      document.getElementById('locationBadge').innerText = `📍 ${cabang}`;
+      document.getElementById('navTabs').classList.remove('hidden');
+      document.getElementById('headerBadges').classList.remove('hidden');
+
+      // Switch view from Home to Form
+      document.getElementById('viewHome').classList.add('hidden');
+      document.getElementById('viewForm').classList.remove('hidden');
+      
+      changeSection(sectionList[0]);
+    }
+
+    // 2. SWITCH TAB FUNCTION
     function switchTab(tab) {
       const btnForm = document.getElementById('btnTabForm');
       const btnDash = document.getElementById('btnTabDash');
@@ -278,11 +374,11 @@
         btnForm.className = "px-4 py-1.5 rounded-md text-xs font-bold transition text-blue-100 hover:text-white hover:bg-blue-600";
         viewDash.classList.remove('hidden');
         viewForm.classList.add('hidden');
-        renderDashboard(); // Refresh angka statistik saat tab dashboard dibuka
+        renderDashboard(); 
       }
     }
 
-    // 2. FETCH DATA DARI GOOGLE SHEET
+    // 3. FETCH DATA DARI GOOGLE SHEET
     function fetchChecklistData() {
       if(!WEB_APP_URL || WEB_APP_URL.includes("PASTE_URL_WEB_APP")) {
         alert("URL Web App belum terpasang di index.html!");
@@ -298,7 +394,6 @@
           allItems = [];
           sectionList = Object.keys(data);
 
-          // Populate Section Dropdown Filter
           const sectionFilter = document.getElementById('sectionFilter');
           sectionFilter.innerHTML = "";
 
@@ -315,8 +410,8 @@
           });
 
           if(allItems.length > 0) {
-            document.getElementById('viewForm').classList.remove('hidden');
-            changeSection(sectionList[0]);
+            // Tampilkan Home View untuk isi identitas
+            document.getElementById('viewHome').classList.remove('hidden');
           } else {
             alert("Data checklist kosong.");
           }
@@ -327,14 +422,14 @@
         });
     }
 
-    // 3. CHANGE SECTION
+    // 4. CHANGE SECTION
     function changeSection(secName) {
       filteredItems = rawDataBySection[secName] || [];
       currentIndex = 0;
       renderItem(0);
     }
 
-    // 4. RENDER SINGLE ITEM FORM
+    // 5. RENDER SINGLE ITEM FORM
     function renderItem(index) {
       const item = filteredItems[index];
       if(!item) return;
@@ -345,7 +440,6 @@
       let selectedResult = saved.hasil || "";
       let uploadedPhotoBase64 = saved.photoBase64 || "";
 
-      // Reset Button Highlights
       document.querySelectorAll('.opt-btn').forEach(btn => {
         btn.className = "opt-btn p-3 text-sm font-semibold rounded-lg border border-slate-300 hover:bg-blue-50 transition";
       });
@@ -354,7 +448,6 @@
         if(activeBtn) activeBtn.className = "opt-btn p-3 text-sm font-bold rounded-lg border-2 border-blue-600 bg-blue-600 text-white transition";
       }
 
-      // Render Photo Preview
       if(uploadedPhotoBase64) {
         document.getElementById('imgPreview').src = uploadedPhotoBase64;
         document.getElementById('previewContainer').classList.remove('hidden');
@@ -363,15 +456,13 @@
         document.getElementById('fileInput').value = "";
       }
 
-      // Set Text Content
       document.getElementById('sectionName').innerText = `SECTION: ${item.sectionName}`;
-      document.getElementById('itemCounter').innerText = `Item ${index + 1} dari ${filteredItems.length} (Total Total ${allItems.length})`;
+      document.getElementById('itemCounter').innerText = `Item ${index + 1} dari ${filteredItems.length} (Total ${allItems.length})`;
       document.getElementById('sectionProgressText').innerText = `Progres Section: ${index + 1} / ${filteredItems.length}`;
       document.getElementById('badgePriority').innerText = item.priorityCode || "S G P";
       document.getElementById('itemTitle').innerText = `${item.noItem || (index + 1)}. ${item.title}`;
       document.getElementById('textPJ').innerText = item.pj || "-";
 
-      // Render Photo Mandatory
       const badgeFoto = document.getElementById('badgeFoto');
       const photoMandatoryLabel = document.getElementById('photoMandatoryLabel');
       if(item.wajibFoto) {
@@ -384,7 +475,6 @@
         photoMandatoryLabel.style.display = "none";
       }
 
-      // Render Panduan
       const panduanList = document.getElementById('panduanList');
       panduanList.innerHTML = "";
       if(Array.isArray(item.panduan) && item.panduan.length > 0) {
@@ -401,7 +491,7 @@
       document.getElementById('btnPrev').style.opacity = (index === 0) ? "0.5" : "1";
     }
 
-    // 5. SELECTION & NAV
+    // 6. SELECTION & NAV
     function selectOption(val) {
       const currentItem = filteredItems[currentIndex];
       const globalIndex = allItems.findIndex(i => i.id === currentItem.id);
@@ -479,7 +569,7 @@
       }
     }
 
-    // 6. RENDER DASHBOARD STATS & TEMUAN
+    // 7. RENDER DASHBOARD STATS & TEMUAN
     function renderDashboard() {
       let countEG = 0, countENG = 0, countNE = 0, countNA = 0;
       let evaluatedCount = 0;
@@ -500,7 +590,6 @@
         });
       });
 
-      // Hitung % Compliance
       let validDenominator = (evaluatedCount - countNA);
       let compPercent = validDenominator > 0 ? Math.round((countEG / validDenominator) * 100) : 0;
 
@@ -510,7 +599,6 @@
       document.getElementById('dashCountENG').innerText = countENG;
       document.getElementById('dashCountNE').innerText = countNE;
 
-      // Set Grade Badge
       const badgeBox = document.getElementById('dashBadgeGrade');
       const gradeText = document.getElementById('dashGradeText');
       if(compPercent >= 90) { badgeBox.className = "badge-platinum px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "PLATINUM"; }
@@ -518,7 +606,6 @@
       else if(compPercent >= 70) { badgeBox.className = "badge-silver px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "SILVER"; }
       else { badgeBox.className = "badge-bronze px-5 py-2.5 rounded-xl text-center shadow-md"; gradeText.innerText = "BRONZE"; }
 
-      // Table Section Breakdown
       const tBody = document.getElementById('tableSectionBody');
       tBody.innerHTML = "";
       sectionList.forEach(sec => {
@@ -548,7 +635,6 @@
         tBody.appendChild(tr);
       });
 
-      // Render Daftar Temuan
       const temuanContainer = document.getElementById('listTemuanContainer');
       temuanContainer.innerHTML = "";
       if(temuanList.length === 0) {
@@ -569,7 +655,7 @@
       }
     }
 
-    // 7. SUBMIT DATA TO APPS SCRIPT
+    // 8. SUBMIT DATA TO APPS SCRIPT
     function submitAuditData() {
       const answersList = Object.values(answersStore);
       if(answersList.length === 0) {
@@ -583,9 +669,10 @@
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('loadingText').innerText = "Mengirim data audit & menyimpan foto ke Google Drive...";
 
+      // Mengirimkan data identitas dinamis yang diisi dari Form Home
       const payload = {
-        cabang: "CIKARANG",
-        auditor: "Auditor Cabang",
+        cabang: auditMeta.cabang || "CIKARANG",
+        auditor: `${auditMeta.auditor} (${auditMeta.jabatan})`,
         answers: answersList
       };
 
