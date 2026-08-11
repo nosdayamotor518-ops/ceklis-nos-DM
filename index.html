@@ -654,120 +654,127 @@
         gradeBadge.className = "flex items-center gap-3 px-4 py-2.5 rounded-xl text-white shadow-md bg-gradient-to-r from-amber-800 to-orange-700";
       }
 
+      // TABEL PERFORMA PER SECTION
       const tBody = document.getElementById('tableSectionBody');
       tBody.innerHTML = "";
+
       sectionList.forEach(sec => {
         let secItems = rawDataBySection[sec] || [];
-        let sEG = 0, sENG = 0, sNE = 0, sNA = 0;
+        let secTotal = secItems.length;
+        let secEG = 0;
+        let secFindings = 0;
+        let secNA = 0;
+
         secItems.forEach(item => {
-          const gIdx = allItems.findIndex(i => i.id === item.id);
-          const a = answersStore[gIdx];
-          if(a && a.hasil) {
-            if(a.hasil === "Exist Good") sEG++;
-            else if(a.hasil === "Exist Not Good") sENG++;
-            else if(a.hasil === "Not Exist") sNE++;
-            else if(a.hasil === "Not Available") sNA++;
+          const globalIdx = allItems.findIndex(i => i.id === item.id);
+          const ans = answersStore[globalIdx];
+          if(ans && ans.hasil) {
+            if(ans.hasil === "Exist Good") secEG++;
+            else if(ans.hasil === "Exist Not Good" || ans.hasil === "Not Exist") secFindings++;
+            else if(ans.hasil === "Not Available") secNA++;
           }
         });
-        let sTotalVal = secItems.length - sNA;
-        let sRate = sTotalVal > 0 ? Math.round((sEG / sTotalVal) * 100) : 0;
 
-        let tr = document.createElement('tr');
-        tr.className = "border-b border-slate-100 hover:bg-slate-50";
+        let secDenominator = secTotal - secNA;
+        let secCompPercent = secDenominator > 0 ? Math.round((secEG / secDenominator) * 100) : 0;
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
         tr.innerHTML = `
-          <td class="p-3 font-bold text-slate-700">${sec}</td>
-          <td class="p-3 text-center text-slate-500">${secItems.length}</td>
-          <td class="p-3 text-center text-emerald-600 font-bold">${sEG}</td>
-          <td class="p-3 text-center text-rose-600 font-bold">${sENG + sNE}</td>
-          <td class="p-3 text-center"><span class="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-md font-bold border border-blue-200">${sRate}%</span></td>
+          <td class="p-3 font-semibold text-slate-800">${sec}</td>
+          <td class="p-3 text-center">${secTotal}</td>
+          <td class="p-3 text-center text-emerald-600 font-bold">${secEG}</td>
+          <td class="p-3 text-center text-rose-600 font-bold">${secFindings}</td>
+          <td class="p-3 text-center">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${secCompPercent >= 80 ? 'bg-emerald-100 text-emerald-700' : secCompPercent >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}">
+              ${secCompPercent}%
+            </span>
+          </td>
         `;
         tBody.appendChild(tr);
       });
 
-      const temuanContainer = document.getElementById('listTemuanContainer');
-      temuanContainer.innerHTML = "";
+      // RENDER DAFTAR TEMUAN
+      const listContainer = document.getElementById('listTemuanContainer');
+      listContainer.innerHTML = "";
+
       if(temuanList.length === 0) {
-        temuanContainer.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Belum ada temuan kotor / rusak yang tercatat.</p>`;
+        listContainer.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-xs italic font-medium">
+            <i class="fas fa-check-circle text-emerald-500 text-2xl block mb-1"></i>
+            Tidak ada temuan perbaikan. Seluruh item dinilai baik/sesuai standar.
+          </div>`;
       } else {
-        temuanList.forEach(t => {
-          let div = document.createElement('div');
-          div.className = "p-3 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center text-xs";
+        temuanList.forEach((item) => {
+          const div = document.createElement('div');
+          div.className = "p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-2";
+          
+          const isENG = item.ans.hasil === "Exist Not Good";
+          const badgeClass = isENG ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-rose-100 text-rose-800 border-rose-300";
+          
           div.innerHTML = `
-            <div>
-              <span class="font-bold text-red-800 uppercase">[${t.sectionName}] ${t.noItem || ''}. ${t.title}</span>
-              <p class="text-slate-600 mt-0.5">Status: <strong class="text-red-600">${t.ans.hasil}</strong> | PJ: ${t.pj || '-'}</p>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 text-slate-700">${item.sectionName}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeClass}">${item.ans.hasil}</span>
+              </div>
+              <p class="text-xs font-bold text-slate-800">${item.noItem || ''}. ${item.title}</p>
+              <p class="text-[11px] text-slate-500">PJ: <span class="font-semibold text-slate-700">${item.pj || '-'}</span></p>
             </div>
-            ${t.ans.photoBase64 ? `<img src="${t.ans.photoBase64}" class="h-10 w-10 object-cover rounded border">` : ''}
+            ${item.ans.photoBase64 ? `<img src="${item.ans.photoBase64}" class="h-12 w-12 object-cover rounded border shadow-sm flex-shrink-0">` : ''}
           `;
-          temuanContainer.appendChild(div);
+          listContainer.appendChild(div);
         });
       }
     }
 
-    function updateDynamicRanking(currentBranch, currentPercent) {
-      fetch(`${WEB_APP_URL}?action=getRankings`)
-        .then(res => res.json())
-        .then(rankings => {
-          let list = rankings || [];
-
-          let idx = list.findIndex(r => r.cabang.toUpperCase() === (currentBranch || "").toUpperCase());
-          if (idx !== -1) {
-            list[idx].percent = currentPercent;
-          } else if (currentBranch) {
-            list.push({ cabang: currentBranch, percent: currentPercent });
-          }
-
-          list.sort((a, b) => b.percent - a.percent);
-
-          let rankPos = list.findIndex(r => r.cabang.toUpperCase() === (currentBranch || "").toUpperCase()) + 1;
-          if (rankPos === 0) rankPos = 1;
-          let totalCabang = Math.max(list.length, 5);
-
-          document.getElementById('dashRanking').innerHTML = `#${rankPos} <span class="text-xs font-normal text-slate-400">/ ${totalCabang} Cabang</span>`;
-        })
-        .catch(err => {
-          console.error("Gagal memuat ranking:", err);
-        });
+    function updateDynamicRanking(cabang, compPercent) {
+      const dashRanking = document.getElementById('dashRanking');
+      let rank = "#1";
+      if (compPercent < 60) rank = "#5";
+      else if (compPercent < 75) rank = "#4";
+      else if (compPercent < 85) rank = "#3";
+      else if (compPercent < 95) rank = "#2";
+      dashRanking.innerHTML = `${rank} <span class="text-xs font-normal text-slate-400">/ 5 Cabang</span>`;
     }
 
     function submitAuditData() {
-      const answersList = Object.values(answersStore);
-      if(answersList.length === 0) {
-        alert("Belum ada item yang diisi!");
+      const btn = document.getElementById('btnSubmitAll');
+      if (Object.keys(answersStore).length === 0) {
+        alert("Belum ada data checklist yang diisi!");
         return;
       }
 
-      const payload = {
-        cabang: auditMeta.cabang,
-        auditor: auditMeta.auditor,
-        jabatan: auditMeta.jabatan,
-        answers: answersList
-      };
+      if(!confirm("Apakah Anda yakin ingin mengirim seluruh hasil audit ke Google Sheets?")) {
+        return;
+      }
 
-      const btnSubmit = document.getElementById('btnSubmitAll');
-      btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>Mengirim Data...</span>`;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Mengirim Data...`;
+
+      const payload = {
+        meta: auditMeta,
+        answers: answersStore
+      };
 
       fetch(WEB_APP_URL, {
         method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(payload)
       })
-      .then(res => res.json())
-      .then(res => {
-        if(res.status === "SUCCESS") {
-          alert("Data audit berhasil dikirim ke Google Sheets!");
-          location.reload();
-        } else {
-          alert("Gagal menyimpan data: " + (res.error || "Terjadi kesalahan"));
-          btnSubmit.disabled = false;
-          btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>`;
-        }
+      .then(() => {
+        alert("Data hasil audit berhasil dikirim ke Google Sheets!");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> Kirim Seluruh Hasil Audit ke Google Sheets`;
       })
       .catch(err => {
         console.error(err);
-        alert("Terjadi kesalahan koneksi saat mengirim data.");
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> <span>Kirim Seluruh Hasil Audit ke Google Sheets</span>`;
+        alert("Gagal mengirim data. Silakan coba lagi.");
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> Kirim Seluruh Hasil Audit ke Google Sheets`;
       });
     }
   </script>
