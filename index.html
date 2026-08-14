@@ -817,40 +817,42 @@
       }
     }
 
-    // KIRIM DATA KE GOOGLE SHEET & HAPUS DRAF
-    function submitAuditData() {
-      if(Object.keys(answersStore).length === 0) {
-        alert("Belum ada data evaluasi yang diisi!");
-        return;
-      }
+   // KIRIM DATA KE GOOGLE SHEET & HAPUS DRAF
+function submitAuditData() {
+  if (Object.keys(answersStore).length === 0) {
+    alert("Belum ada data evaluasi yang diisi!");
+    return;
+  }
 
-      const btn = document.getElementById('btnSubmitAll');
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mengirim Data...`;
+  const btn = document.getElementById('btnSubmitAll');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mengirim Data...`;
 
-      const payload = {
-        meta: auditMeta,
-        answers: answersStore
-      };
+  const payload = {
+    meta: auditMeta,
+    answers: answersStore
+  };
 
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        localStorage.removeItem('NOS_AUDIT_PROGRESS_DRAFT'); // Hapus draf lokal setelah berhasil dikirim
-        alert("Data audit berhasil dikirim ke Google Sheets!");
-        location.reload();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Gagal mengirim data. Silakan coba lagi.");
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fas fa-paper-plane"></i> Kirim Seluruh Hasil Audit ke Google Sheets`;
-      });
-    }
-  </script>
+  // Menggunakan header text/plain agar kompatibel dengan no-cors Google Apps Script
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    localStorage.removeItem('NOS_AUDIT_PROGRESS_DRAFT'); // Hapus draf lokal setelah dikirim
+    alert("Data audit berhasil dikirim ke Google Sheets!");
+    location.reload();
+  })
+  .catch(err => {
+    console.error("Error sending data:", err);
+    alert("Gagal mengirim data. Silakan periksa koneksi internet Anda.");
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-paper-plane"></i> Kirim Seluruh Hasil Audit ke Google Sheets`;
+  });
+}  </script>
 </body>
 </html>
