@@ -3,86 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Form Audit NOS Cabang</title>
-  <!-- Tailwind CSS CDN untuk Tampilan Modern & Responsive -->
+  <title>NOS Audit Web App</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-100 min-h-screen pb-12 font-sans">
+<body class="bg-slate-100 min-h-screen font-sans">
 
-  <!-- Header -->
-  <div class="bg-blue-700 text-white py-6 px-4 shadow-md mb-8">
-    <div class="max-w-4xl mx-auto">
-      <h1 class="text-2xl md:text-3xl font-bold">Aplikasi Web Audit NOS</h1>
-      <p class="text-blue-100 text-sm mt-1">Sistem Input Monitoring & Checklist Cabang</p>
-    </div>
-  </div>
-
-  <div class="max-w-4xl mx-auto px-4">
-    <form id="auditForm" onsubmit="submitForm(event)">
+  <!-- NAVBAR & HEADER -->
+  <header class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-clipboard-check text-2xl text-yellow-400"></i>
+        <div>
+          <h1 class="text-xl font-bold leading-tight">NOS Audit Web App</h1>
+          <p class="text-xs text-blue-200">Monitoring & Checklist Cabang</p>
+        </div>
+      </div>
       
-      <!-- CARD 1: INFORMASI AUDITOR & CABANG -->
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b">1. Informasi Audit & Cabang</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Cabang *</label>
-            <select id="cabang" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <option value="">-- Memuat daftar cabang... --</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Nama Auditor *</label>
-            <input type="text" id="auditor" required placeholder="Nama Lengkap Auditor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">No. Telepon / WA *</label>
-            <input type="tel" id="phone" required placeholder="08xxxxxxxxxx" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan *</label>
-            <input type="text" id="jabatan" required placeholder="Contoh: Area Manager / Supervisor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-
-        </div>
-      </div>
-
-      <!-- CARD 2: CHECKLIST AUDIT -->
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b">2. Form Penilaian Checklist</h2>
-        <div id="checklistContainer" class="space-y-6">
-          <p class="text-slate-500 italic text-center py-4">Memuat daftar item audit...</p>
-        </div>
-      </div>
-
-      <!-- CARD 3: TOMBOL SUBMIT -->
-      <div class="flex justify-end">
-        <button type="submit" id="btnSubmit" class="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-          <span>Kirim Hasil Audit</span>
+      <!-- NAV TAB DASHBOARD & AUDIT -->
+      <nav class="flex bg-blue-900/60 p-1 rounded-lg text-sm">
+        <button id="tabDashboard" onclick="switchTab('dashboard')" class="px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow">
+          <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
         </button>
+        <button id="tabAudit" onclick="switchTab('audit')" class="px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white">
+          <i class="fa-solid fa-pen-to-square mr-1.5"></i> Form Audit
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- =================================================================== -->
+    <!-- VIEW 1: DASHBOARD -->
+    <!-- =================================================================== -->
+    <div id="viewDashboard" class="space-y-6">
+      
+      <!-- HERO / WELCOME CARD -->
+      <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-xl p-6 text-white shadow-md">
+        <h2 class="text-2xl font-bold mb-2">Selamat Datang di Portal Audit NOS</h2>
+        <p class="text-blue-100 text-sm max-w-2xl">
+          Sistem penilaian dan pengawasan kualitas layanan, fasilitas, dan operasional seluruh cabang.
+        </p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button onclick="switchTab('audit')" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold px-5 py-2 rounded-lg text-sm transition shadow">
+            Mulai Audit Baru <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
       </div>
 
-    </form>
-  </div>
+      <!-- RINGKASAN PANEL STATISTIK -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Panel Section</p>
+            <h3 id="dashTotalSection" class="text-2xl font-extrabold text-slate-800">6 Panel</h3>
+            <p class="text-xs text-slate-400">H1 & H23 (Premises, People, Process)</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Item Audit</p>
+            <h3 id="dashTotalItems" class="text-2xl font-extrabold text-slate-800">- Item</h3>
+            <p class="text-xs text-slate-400">Tersedia di Master Checklist</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Mandatory Concern</p>
+            <h3 id="dashMandatoryItems" class="text-2xl font-extrabold text-slate-800">- Item</h3>
+            <p class="text-xs text-slate-400">Wajib Lampirkan Foto Bukti</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANDUAN BADGE CONCERN CABANG -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-blue-600"></i> Panduan Kelas Badge Concern
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 rounded-lg border border-red-200 bg-red-50">
+            <span class="inline-block px-2 py-0.5 rounded bg-red-600 text-white font-bold mb-1">Badge S (Silver)</span>
+            <p class="text-slate-600">Standard Operasional Dasar. Part of Concern prioritas tinggi.</p>
+          </div>
+          <div class="p-3 rounded-lg border border-amber-200 bg-amber-50">
+            <span class="inline-block px-2 py-0.5 rounded bg-amber-600 text-white font-bold mb-1">Badge G (Gold)</span>
+            <p class="text-slate-600">Kepatuhan Standar Mutu Layanan & Kelengkapan Fasilitas.</p>
+          </div>
+          <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
+            <span class="inline-block px-2 py-0.5 rounded bg-slate-700 text-white font-bold mb-1">Badge P (Platinum)</span>
+            <p class="text-slate-600">Excellence Standard & Kinerja Operasional Cabang Lanjutan.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 2: FORM AUDIT -->
+    <!-- =================================================================== -->
+    <div id="viewAudit" class="hidden space-y-6">
+      
+      <form id="auditForm" onsubmit="submitForm(event)">
+        
+        <!-- BAGIAN 1: INFORMASI AUDITOR & CABANG -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
+          <h2 class="text-base font-bold text-slate-800 mb-4 pb-2 border-b flex items-center gap-2">
+            <i class="fa-solid fa-building-user text-blue-600"></i> 1. Informasi Cabang & Auditor
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Cabang *</label>
+              <select id="cabang" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">-- Memuat daftar cabang... --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Auditor *</label>
+              <input type="text" id="auditor" required placeholder="Nama Lengkap Auditor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">No. Telepon / WA *</label>
+              <input type="tel" id="phone" required placeholder="08xxxxxxxxxx" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan *</label>
+              <input type="text" id="jabatan" required placeholder="Contoh: Area Manager / Supervisor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- BAGIAN 2: FILTER PANEL SECTION & CHECKLIST -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
+          
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b mb-6">
+            <div>
+              <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-blue-600"></i> 2. Penilaian Checklist Audit
+              </h2>
+              <p class="text-xs text-slate-500">Pilih panel section di bawah untuk menyaring tampilan item audit.</p>
+            </div>
+
+            <!-- DROPDOWN FILTER SECTION (PANEL) -->
+            <div class="min-w-[260px]">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Filter Panel Section:</label>
+              <select id="sectionFilter" onchange="filterChecklist()" class="w-full p-2 bg-blue-50 border border-blue-300 rounded-lg text-sm font-semibold text-blue-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="ALL">-- Tampilkan Semua Section --</option>
+                <option value="H1 Premises">H1 Premises</option>
+                <option value="H1 People">H1 People</option>
+                <option value="H1 Process">H1 Process</option>
+                <option value="H23 Premises">H23 Premises</option>
+                <option value="H23 People">H23 People</option>
+                <option value="H23 Process">H23 Process</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CONTAINER CHECKLIST -->
+          <div id="checklistContainer" class="space-y-6">
+            <div class="text-center py-8">
+              <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-600 mb-2"></i>
+              <p class="text-slate-500 text-sm">Sedang memuat master checklist...</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- TOMBOL SUBMIT -->
+        <div class="flex justify-end">
+          <button type="submit" id="btnSubmit" class="w-full md:w-auto px-8 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Kirim Hasil Audit</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
 
   <script>
     // =========================================================================
-    // PASTE URL WEB APP DARI GOOGLE APPS SCRIPT KAKAK DI BAWAH INI:
+    // PASTIKAN PASTE DEPLOYMENT URL WEB APP APPS SCRIPT ANDA DI SINI
     // =========================================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYOUR_DEPLOYMENT_ID/exec";
 
     let globalChecklistData = {};
 
-    // Inisialisasi Saat Halaman Dimuat
     document.addEventListener("DOMContentLoaded", function() {
       fetchCabang();
       fetchChecklist();
     });
 
-    // 1. Ambil Daftar Cabang dari Google Apps Script
+    // SISTEM TAB DASHBOARD vs AUDIT FORM
+    function switchTab(tabName) {
+      const viewDash = document.getElementById("viewDashboard");
+      const viewAudit = document.getElementById("viewAudit");
+      const btnDash = document.getElementById("tabDashboard");
+      const btnAudit = document.getElementById("tabAudit");
+
+      if (tabName === 'dashboard') {
+        viewDash.classList.remove("hidden");
+        viewAudit.classList.add("hidden");
+        btnDash.className = "px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow";
+        btnAudit.className = "px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white";
+      } else {
+        viewAudit.classList.remove("hidden");
+        viewDash.classList.add("hidden");
+        btnAudit.className = "px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow";
+        btnDash.className = "px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white";
+      }
+    }
+
+    // 1. FETCH DAFTAR CABANG
     async function fetchCabang() {
       const selectCabang = document.getElementById("cabang");
       try {
@@ -97,74 +247,173 @@
           selectCabang.appendChild(opt);
         });
       } catch (err) {
-        console.error("Gagal mengambil daftar cabang:", err);
+        console.error("Error fetching cabang:", err);
         selectCabang.innerHTML = '<option value="">Gagal memuat cabang</option>';
       }
     }
 
-    // 2. Ambil Daftar Master Checklist dari Google Apps Script
+    // 2. FETCH MASTER CHECKLIST
     async function fetchChecklist() {
       const container = document.getElementById("checklistContainer");
       try {
         const response = await fetch(`${SCRIPT_URL}?action=getChecklist`);
         globalChecklistData = await response.json();
         
-        container.innerHTML = "";
-        
-        // Loop per Section/Kategori Checklist
-        Object.keys(globalChecklistData).forEach((sectionName, index) => {
-          const sectionDiv = document.createElement("div");
-          sectionDiv.className = "border border-slate-200 rounded-lg p-4 bg-slate-50/50 mb-4";
-          
-          let html = `<h3 class="font-bold text-blue-700 border-b pb-2 mb-4 text-md">${sectionName}</h3>`;
-          
-          globalChecklistData[sectionName].forEach((item) => {
-            html += `
-              <div class="bg-white p-4 rounded border border-slate-200 mb-4 shadow-sm" id="card_item_${item.id}">
-                <div class="flex justify-between items-start mb-2">
-                  <p class="font-semibold text-slate-800 text-sm md:text-base">${item.noItem}. ${item.title}</p>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">Badge: ${item.Kelas_Badge}</span>
-                </div>
-                
-                ${item.panduan && item.panduan.length ? `<p class="text-xs text-slate-500 mb-3 italic">Panduan: ${item.panduan.join(', ')}</p>` : ''}
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-                  <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Penilaian *</label>
-                    <select id="hasil_${item.id}" required class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500">
-                      <option value="">-- Pilih --</option>
-                      <option value="Exist Good (EG)">Exist Good (EG)</option>
-                      <option value="Exist Not Good (ENG)">Exist Not Good (ENG)</option>
-                      <option value="Not Exist (NE)">Not Exist (NE)</option>
-                      <option value="Not Available (NA)">Not Available (NA)</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Catatan Temuan</label>
-                    <input type="text" id="catatan_${item.id}" placeholder="Keterangan / Temuan" class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500">
-                  </div>
-                  
-                  <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Foto Bukti ${item.wajibFoto ? '<span class="text-red-500">*</span>' : ''}</label>
-                    <input type="file" id="foto_${item.id}" accept="image/*" ${item.wajibFoto ? 'required' : ''} class="w-full text-xs p-1 bg-slate-50 border border-slate-300 rounded">
-                  </div>
-                </div>
-              </div>
-            `;
-          });
-          
-          sectionDiv.innerHTML = html;
-          container.appendChild(sectionDiv);
-        });
+        // Update Statistik Dashboard
+        updateDashboardStats(globalChecklistData);
+
+        // Opsi Dropdown Filter Section otomatis dari data backend
+        populateSectionDropdown(globalChecklistData);
+
+        // Render checklist awal
+        renderChecklist("ALL");
 
       } catch (err) {
-        console.error("Gagal mengambil checklist:", err);
-        container.innerHTML = `<p class="text-red-500 text-center py-4">Gagal memuat master checklist. Periksa koneksi atau URL Apps Script.</p>`;
+        console.error("Error fetching checklist:", err);
+        container.innerHTML = `<p class="text-red-500 text-center py-4">Gagal memuat master checklist. Pastikan URL Apps Script sudah benar.</p>`;
       }
     }
 
-    // Fungsi Pembantu: Kompres Foto ke Base64 agar tidak melebihi batas Google Sheets
+    // ISI DROPDOWN FILTER DARI BACKEND
+    function populateSectionDropdown(data) {
+      const select = document.getElementById("sectionFilter");
+      select.innerHTML = '<option value="ALL">-- Tampilkan Semua Panel Section --</option>';
+      
+      Object.keys(data).forEach(secName => {
+        const opt = document.createElement("option");
+        opt.value = secName;
+        opt.textContent = secName;
+        select.appendChild(opt);
+      });
+    }
+
+    // UPDATE STATISTIK DI DASHBOARD
+    function updateDashboardStats(data) {
+      let totalItems = 0;
+      let totalMandatory = 0;
+      const sections = Object.keys(data);
+
+      sections.forEach(sec => {
+        data[sec].forEach(item => {
+          totalItems++;
+          if (item.wajibFoto) totalMandatory++;
+        });
+      });
+
+      document.getElementById("dashTotalSection").textContent = `${sections.length} Panel`;
+      document.getElementById("dashTotalItems").textContent = `${totalItems} Item`;
+      document.getElementById("dashMandatoryItems").textContent = `${totalMandatory} Item`;
+    }
+
+    // RENDER CHECKLIST DENGAN FILTER SECTION
+    function renderChecklist(filterSection) {
+      const container = document.getElementById("checklistContainer");
+      container.innerHTML = "";
+
+      let countRendered = 0;
+
+      Object.keys(globalChecklistData).forEach((sectionName) => {
+        if (filterSection !== "ALL" && sectionName.toLowerCase() !== filterSection.toLowerCase()) {
+          return; // Skip section yang tidak cocok dengan filter
+        }
+
+        const sectionDiv = document.createElement("div");
+        sectionDiv.className = "border border-slate-200 rounded-xl p-4 bg-slate-50/50 mb-6";
+        
+        let html = `
+          <div class="flex items-center justify-between border-b pb-2 mb-4">
+            <h3 class="font-bold text-blue-800 text-md flex items-center gap-2">
+              <i class="fa-solid fa-folder-open text-blue-600"></i> ${sectionName}
+            </h3>
+            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded-full">
+              ${globalChecklistData[sectionName].length} Item
+            </span>
+          </div>
+        `;
+
+        globalChecklistData[sectionName].forEach((item) => {
+          countRendered++;
+          const isMandatory = item.wajibFoto;
+          
+          // Penentuan Warna Badge Concern
+          let badgeColor = "bg-slate-700 text-white";
+          if (item.Kelas_Badge === "S") badgeColor = "bg-red-600 text-white";
+          else if (item.Kelas_Badge === "G") badgeColor = "bg-amber-500 text-white";
+          else if (item.Kelas_Badge === "P") badgeColor = "bg-blue-600 text-white";
+
+          html += `
+            <div class="bg-white p-4 rounded-lg border ${isMandatory ? 'border-amber-300 shadow-sm' : 'border-slate-200'} mb-4">
+              
+              <!-- HEADER ITEM: NO, NAMA, & BADGE -->
+              <div class="flex flex-wrap justify-between items-start gap-2 mb-2">
+                <p class="font-semibold text-slate-800 text-sm md:text-base flex-1">
+                  ${item.noItem}. ${item.title}
+                </p>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded ${badgeColor}">
+                    Badge ${item.Kelas_Badge}
+                  </span>
+                  ${isMandatory ? `
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200">
+                      <i class="fa-solid fa-camera mr-0.5"></i> Mandatory Foto
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- PANDUAN AUDIT -->
+              ${item.panduan && item.panduan.length ? `
+                <div class="text-xs text-slate-500 bg-slate-50 p-2 rounded mb-3 border border-slate-100">
+                  <span class="font-semibold text-slate-600">Panduan:</span> ${item.panduan.join(' ')}
+                </div>
+              ` : ''}
+
+              <!-- INPUTS PENILAIAN, CATATAN, FOTO -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Penilaian *</label>
+                  <select id="hasil_${item.id}" required class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Pilih --</option>
+                    <option value="Exist Good (EG)">Exist Good (EG)</option>
+                    <option value="Exist Not Good (ENG)">Exist Not Good (ENG)</option>
+                    <option value="Not Exist (NE)">Not Exist (NE)</option>
+                    <option value="Not Available (NA)">Not Available (NA)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Temuan</label>
+                  <input type="text" id="catatan_${item.id}" placeholder="Keterangan temuan auditor" class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">
+                    Foto Bukti ${isMandatory ? '<span class="text-red-600 font-bold">(Wajib) *</span>' : '<span class="text-slate-400 font-normal">(Opsional)</span>'}
+                  </label>
+                  <input type="file" id="foto_${item.id}" accept="image/*" ${isMandatory ? 'required' : ''} class="w-full text-xs p-1 bg-slate-50 border border-slate-300 rounded-md">
+                </div>
+              </div>
+
+            </div>
+          `;
+        });
+
+        sectionDiv.innerHTML = html;
+        container.appendChild(sectionDiv);
+      });
+
+      if (countRendered === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-center py-6">Tidak ada item checklist untuk panel section ini.</p>`;
+      }
+    }
+
+    // HANDLER JIKA FILTER DROPDOWN DIUBAH
+    function filterChecklist() {
+      const selected = document.getElementById("sectionFilter").value;
+      renderChecklist(selected);
+    }
+
+    // FUNGSI KOMPRESI FOTO
     function processImage(file) {
       return new Promise((resolve) => {
         if (!file) resolve("-");
@@ -175,30 +424,28 @@
           img.src = event.target.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 600; // Resize lebar foto max 600px
+            const MAX_WIDTH = 600;
             const scale = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scale;
 
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            // Kompres kualitas gambar ke JPEG 0.6
             resolve(canvas.toDataURL('image/jpeg', 0.6));
           };
         };
       });
     }
 
-    // 3. Kirim Data Audit ke Google Apps Script (doPost)
+    // 3. SUBMIT FORM KE BACKEND
     async function submitForm(event) {
       event.preventDefault();
-      
+
       const btnSubmit = document.getElementById("btnSubmit");
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<span>Mengirim...</span>`;
+      btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mengirim Data...`;
 
       try {
-        // Susun objek Meta Data Auditor
         const meta = {
           cabang: document.getElementById("cabang").value,
           auditor: document.getElementById("auditor").value,
@@ -206,60 +453,68 @@
           jabatan: document.getElementById("jabatan").value
         };
 
-        // Susun objek Hasil Penilaian
         const answers = {};
 
         for (const sectionName of Object.keys(globalChecklistData)) {
           for (const item of globalChecklistData[sectionName]) {
-            const hasilVal = document.getElementById(`hasil_${item.id}`).value;
-            const catatanVal = document.getElementById(`catatan_${item.id}`).value;
-            const photoInput = document.getElementById(`foto_${item.id}`);
-            const photoFile = photoInput.files[0] || null;
+            const hasilEl = document.getElementById(`hasil_${item.id}`);
+            const catatanEl = document.getElementById(`catatan_${item.id}`);
+            const photoEl = document.getElementById(`foto_${item.id}`);
 
-            // Process kompresi foto jika ada
-            const photoBase64 = await processImage(photoFile);
+            // Ambil input jika elemen ter-render di DOM
+            if (hasilEl) {
+              const hasilVal = hasilEl.value;
+              const catatanVal = catatanEl ? catatanEl.value : "";
+              const photoFile = (photoEl && photoEl.files.length) ? photoEl.files[0] : null;
 
-            // Hitung poin sederhana (misal EG = 10, selain itu 0)
-            let poin = 0;
-            if (hasilVal === "Exist Good (EG)") poin = item.poinStandar || 10;
+              if (hasilVal !== "") {
+                const photoBase64 = await processImage(photoFile);
+                let poin = (hasilVal === "Exist Good (EG)") ? (item.poinStandar || 10) : 0;
 
-            answers[item.id] = {
-              idChecklist: item.id,
-              section: sectionName,
-              title: item.title,
-              Kelas_Badge: item.Kelas_Badge,
-              hasil: hasilVal,
-              poin: poin,
-              catatan: catatanVal || "-",
-              photoBase64: photoBase64
-            };
+                answers[item.id] = {
+                  idChecklist: item.id,
+                  section: sectionName,
+                  title: item.title,
+                  Kelas_Badge: item.Kelas_Badge,
+                  hasil: hasilVal,
+                  poin: poin,
+                  catatan: catatanVal || "-",
+                  photoBase64: photoBase64
+                };
+              }
+            }
           }
         }
 
-        const payload = { meta: meta, answers: answers };
+        if (Object.keys(answers).length === 0) {
+          alert("Silakan isi minimal satu penilaian checklist sebelum mengirim.");
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Kirim Hasil Audit</span>`;
+          return;
+        }
 
-        // Kirim request POST ke Apps Script
         const response = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ meta: meta, answers: answers })
         });
 
         const result = await response.json();
 
         if (result.status === "success") {
-          alert("Berhasil! Data hasil audit telah disimpan ke Google Sheet.");
+          alert("Berhasil! Seluruh data hasil audit telah berhasil tersimpan ke Google Sheet.");
           document.getElementById("auditForm").reset();
+          switchTab('dashboard');
         } else {
           alert("Gagal menyimpan data: " + result.message);
         }
 
       } catch (err) {
-        console.error("Error submit:", err);
-        alert("Terjadi kesalahan saat mengirim data. Pastikan koneksi internet stabil.");
+        console.error("Submit Error:", err);
+        alert("Terjadi kesalahan teknis saat mengirim data. Pastikan koneksi internet stabil.");
       } finally {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = `<span>Kirim Hasil Audit</span>`;
+        btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Kirim Hasil Audit</span>`;
       }
     }
   </script>
