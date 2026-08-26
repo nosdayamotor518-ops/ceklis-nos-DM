@@ -1,522 +1,645 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOS Audit Web App</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NOS Monitoring Audit Cabang</title>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel CDN untuk render JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div id="root"></div>
 
-  <!-- NAVBAR & HEADER -->
-  <header class="bg-blue-800 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
-      <div class="flex items-center gap-3">
-        <i class="fa-solid fa-clipboard-check text-2xl text-yellow-400"></i>
-        <div>
-          <h1 class="text-xl font-bold leading-tight">NOS Audit Web App</h1>
-          <p class="text-xs text-blue-200">Monitoring & Checklist Cabang</p>
-        </div>
-      </div>
-      
-      <!-- NAV TAB DASHBOARD & AUDIT -->
-      <nav class="flex bg-blue-900/60 p-1 rounded-lg text-sm">
-        <button id="tabDashboard" onclick="switchTab('dashboard')" class="px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow">
-          <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
-        </button>
-        <button id="tabAudit" onclick="switchTab('audit')" class="px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white">
-          <i class="fa-solid fa-pen-to-square mr-1.5"></i> Form Audit
-        </button>
-      </nav>
-    </div>
-  </header>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-  <main class="max-w-6xl mx-auto px-4 py-6">
+    // ==========================================
+    // ⚠️ GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ⚠️
+    // ==========================================
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
 
-    <!-- =================================================================== -->
-    <!-- VIEW 1: DASHBOARD -->
-    <!-- =================================================================== -->
-    <div id="viewDashboard" class="space-y-6">
-      
-      <!-- HERO / WELCOME CARD -->
-      <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-xl p-6 text-white shadow-md">
-        <h2 class="text-2xl font-bold mb-2">Selamat Datang di Portal Audit NOS</h2>
-        <p class="text-blue-100 text-sm max-w-2xl">
-          Sistem penilaian dan pengawasan kualitas layanan, fasilitas, dan operasional seluruh cabang.
-        </p>
-        <div class="mt-4 flex flex-wrap gap-3">
-          <button onclick="switchTab('audit')" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold px-5 py-2 rounded-lg text-sm transition shadow">
-            Mulai Audit Baru <i class="fa-solid fa-arrow-right ml-1"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- RINGKASAN PANEL STATISTIK -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center text-xl font-bold">
-            <i class="fa-solid fa-layer-group"></i>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Panel Section</p>
-            <h3 id="dashTotalSection" class="text-2xl font-extrabold text-slate-800">6 Panel</h3>
-            <p class="text-xs text-slate-400">H1 & H23 (Premises, People, Process)</p>
-          </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center text-xl font-bold">
-            <i class="fa-solid fa-list-check"></i>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Item Audit</p>
-            <h3 id="dashTotalItems" class="text-2xl font-extrabold text-slate-800">- Item</h3>
-            <p class="text-xs text-slate-400">Tersedia di Master Checklist</p>
-          </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center text-xl font-bold">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Mandatory Concern</p>
-            <h3 id="dashMandatoryItems" class="text-2xl font-extrabold text-slate-800">- Item</h3>
-            <p class="text-xs text-slate-400">Wajib Lampirkan Foto Bukti</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- PANDUAN BADGE CONCERN CABANG -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-circle-info text-blue-600"></i> Panduan Kelas Badge Concern
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div class="p-3 rounded-lg border border-red-200 bg-red-50">
-            <span class="inline-block px-2 py-0.5 rounded bg-red-600 text-white font-bold mb-1">Badge S (Silver)</span>
-            <p class="text-slate-600">Standard Operasional Dasar. Part of Concern prioritas tinggi.</p>
-          </div>
-          <div class="p-3 rounded-lg border border-amber-200 bg-amber-50">
-            <span class="inline-block px-2 py-0.5 rounded bg-amber-600 text-white font-bold mb-1">Badge G (Gold)</span>
-            <p class="text-slate-600">Kepatuhan Standar Mutu Layanan & Kelengkapan Fasilitas.</p>
-          </div>
-          <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
-            <span class="inline-block px-2 py-0.5 rounded bg-slate-700 text-white font-bold mb-1">Badge P (Platinum)</span>
-            <p class="text-slate-600">Excellence Standard & Kinerja Operasional Cabang Lanjutan.</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- =================================================================== -->
-    <!-- VIEW 2: FORM AUDIT -->
-    <!-- =================================================================== -->
-    <div id="viewAudit" class="hidden space-y-6">
-      
-      <form id="auditForm" onsubmit="submitForm(event)">
-        
-        <!-- BAGIAN 1: INFORMASI AUDITOR & CABANG -->
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
-          <h2 class="text-base font-bold text-slate-800 mb-4 pb-2 border-b flex items-center gap-2">
-            <i class="fa-solid fa-building-user text-blue-600"></i> 1. Informasi Cabang & Auditor
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Cabang *</label>
-              <select id="cabang" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="">-- Memuat daftar cabang... --</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Auditor *</label>
-              <input type="text" id="auditor" required placeholder="Nama Lengkap Auditor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">No. Telepon / WA *</label>
-              <input type="tel" id="phone" required placeholder="08xxxxxxxxxx" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan *</label>
-              <input type="text" id="jabatan" required placeholder="Contoh: Area Manager / Supervisor" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-          </div>
-        </div>
-
-        <!-- BAGIAN 2: FILTER PANEL SECTION & CHECKLIST -->
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6">
-          
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b mb-6">
-            <div>
-              <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-list-check text-blue-600"></i> 2. Penilaian Checklist Audit
-              </h2>
-              <p class="text-xs text-slate-500">Pilih panel section di bawah untuk menyaring tampilan item audit.</p>
-            </div>
-
-            <!-- DROPDOWN FILTER SECTION (PANEL) -->
-            <div class="min-w-[260px]">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Filter Panel Section:</label>
-              <select id="sectionFilter" onchange="filterChecklist()" class="w-full p-2 bg-blue-50 border border-blue-300 rounded-lg text-sm font-semibold text-blue-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="ALL">-- Tampilkan Semua Section --</option>
-                <option value="H1 Premises">H1 Premises</option>
-                <option value="H1 People">H1 People</option>
-                <option value="H1 Process">H1 Process</option>
-                <option value="H23 Premises">H23 Premises</option>
-                <option value="H23 People">H23 People</option>
-                <option value="H23 Process">H23 Process</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- CONTAINER CHECKLIST -->
-          <div id="checklistContainer" class="space-y-6">
-            <div class="text-center py-8">
-              <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-600 mb-2"></i>
-              <p class="text-slate-500 text-sm">Sedang memuat master checklist...</p>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- TOMBOL SUBMIT -->
-        <div class="flex justify-end">
-          <button type="submit" id="btnSubmit" class="w-full md:w-auto px-8 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-paper-plane"></i>
-            <span>Kirim Hasil Audit</span>
-          </button>
-        </div>
-
-      </form>
-    </div>
-
-  </main>
-
-  <script>
-    // =========================================================================
-    // PASTIKAN PASTE DEPLOYMENT URL WEB APP APPS SCRIPT ANDA DI SINI
-    // =========================================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYOUR_DEPLOYMENT_ID/exec";
-
-    let globalChecklistData = {};
-
-    document.addEventListener("DOMContentLoaded", function() {
-      fetchCabang();
-      fetchChecklist();
-    });
-
-    // SISTEM TAB DASHBOARD vs AUDIT FORM
-    function switchTab(tabName) {
-      const viewDash = document.getElementById("viewDashboard");
-      const viewAudit = document.getElementById("viewAudit");
-      const btnDash = document.getElementById("tabDashboard");
-      const btnAudit = document.getElementById("tabAudit");
-
-      if (tabName === 'dashboard') {
-        viewDash.classList.remove("hidden");
-        viewAudit.classList.add("hidden");
-        btnDash.className = "px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow";
-        btnAudit.className = "px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white";
-      } else {
-        viewAudit.classList.remove("hidden");
-        viewDash.classList.add("hidden");
-        btnAudit.className = "px-4 py-1.5 rounded-md font-medium transition bg-blue-600 text-white shadow";
-        btnDash.className = "px-4 py-1.5 rounded-md font-medium transition text-blue-200 hover:text-white";
+    // Data Konfigurasi Visual Tier Gamifikasi
+    const TIER_CONFIG = {
+      Bronze: {
+        name: 'BRONZE TIER',
+        subtitle: 'Status Awal / Standar Dasar',
+        gradient: 'from-amber-900 via-yellow-950 to-slate-900',
+        border: 'border-amber-700/50',
+        textAccent: 'text-amber-400',
+        glow: 'shadow-amber-900/40',
+        icon: '🥉',
+        challengeText: 'Wajib penuhi 100% item mandatory (S,G,P) dengan status "Exist Good" untuk naik ke SILVER TIER!'
+      },
+      Silver: {
+        name: 'SILVER TIER',
+        subtitle: 'Memenuhi Kualifikasi Standar',
+        gradient: 'from-slate-800 via-slate-900 to-zinc-950',
+        border: 'border-slate-400/50',
+        textAccent: 'text-slate-200',
+        glow: 'shadow-slate-500/30',
+        icon: '🥈',
+        challengeText: 'Hebat! Penuhi item mandatory (G,P) dengan status "Exist Good" untuk meraih GOLD TIER!'
+      },
+      Gold: {
+        name: 'GOLD TIER',
+        subtitle: 'Performa Audit Sangat Baik',
+        gradient: 'from-amber-600 via-yellow-600 to-amber-800',
+        border: 'border-yellow-300/70',
+        textAccent: 'text-yellow-200',
+        glow: 'shadow-yellow-500/50',
+        icon: '🥇',
+        challengeText: 'Satu langkah lagi! Penuhi item mandatory (P) dengan status "Exist Good" untuk puncak PLATINUM!'
+      },
+      Platinum: {
+        name: 'PLATINUM TIER',
+        subtitle: 'Kualitas Operasional Sempurna',
+        gradient: 'from-cyan-600 via-indigo-700 to-fuchsia-700',
+        border: 'border-cyan-300/80',
+        textAccent: 'text-cyan-200',
+        glow: 'shadow-cyan-500/60',
+        icon: '👑',
+        challengeText: 'Luar Biasa! Seluruh item mandatory (S,G,P | G,P | P) berstatus Exist Good!'
       }
-    }
+    };
 
-    // 1. FETCH DAFTAR CABANG
-    async function fetchCabang() {
-      const selectCabang = document.getElementById("cabang");
-      try {
-        const response = await fetch(`${SCRIPT_URL}?action=getCabang`);
-        const list = await response.json();
-        
-        selectCabang.innerHTML = '<option value="">-- Pilih Cabang --</option>';
-        list.forEach(item => {
-          const opt = document.createElement("option");
-          opt.value = item;
-          opt.textContent = item;
-          selectCabang.appendChild(opt);
-        });
-      } catch (err) {
-        console.error("Error fetching cabang:", err);
-        selectCabang.innerHTML = '<option value="">Gagal memuat cabang</option>';
-      }
-    }
+    function App() {
+      const [gasUrl, setGasUrl] = useState(localStorage.getItem('NOS_GAS_URL') || DEFAULT_GAS_URL);
+      const [view, setView] = useState('setup'); // 'setup', 'dashboard', 'form'
+      const [cabangList, setCabangList] = useState([]);
+      const [loading, setLoading] = useState(false);
 
-    // 2. FETCH MASTER CHECKLIST
-    async function fetchChecklist() {
-      const container = document.getElementById("checklistContainer");
-      try {
-        const response = await fetch(`${SCRIPT_URL}?action=getChecklist`);
-        globalChecklistData = await response.json();
-        
-        // Update Statistik Dashboard
-        updateDashboardStats(globalChecklistData);
+      // State Data Audit
+      const [kodeCabang, setKodeCabang] = useState('');
+      const [namaCabang, setNamaCabang] = useState('');
+      const [namaAuditor, setNamaAuditor] = useState('');
+      const [jabatan, setJabatan] = useState('');
+      const [selectedSection, setSelectedSection] = useState('ALL');
+      const [sessionId, setSessionId] = useState('');
 
-        // Opsi Dropdown Filter Section otomatis dari data backend
-        populateSectionDropdown(globalChecklistData);
-
-        // Render checklist awal
-        renderChecklist("ALL");
-
-      } catch (err) {
-        console.error("Error fetching checklist:", err);
-        container.innerHTML = `<p class="text-red-500 text-center py-4">Gagal memuat master checklist. Pastikan URL Apps Script sudah benar.</p>`;
-      }
-    }
-
-    // ISI DROPDOWN FILTER DARI BACKEND
-    function populateSectionDropdown(data) {
-      const select = document.getElementById("sectionFilter");
-      select.innerHTML = '<option value="ALL">-- Tampilkan Semua Panel Section --</option>';
-      
-      Object.keys(data).forEach(secName => {
-        const opt = document.createElement("option");
-        opt.value = secName;
-        opt.textContent = secName;
-        select.appendChild(opt);
-      });
-    }
-
-    // UPDATE STATISTIK DI DASHBOARD
-    function updateDashboardStats(data) {
-      let totalItems = 0;
-      let totalMandatory = 0;
-      const sections = Object.keys(data);
-
-      sections.forEach(sec => {
-        data[sec].forEach(item => {
-          totalItems++;
-          if (item.wajibFoto) totalMandatory++;
-        });
-      });
-
-      document.getElementById("dashTotalSection").textContent = `${sections.length} Panel`;
-      document.getElementById("dashTotalItems").textContent = `${totalItems} Item`;
-      document.getElementById("dashMandatoryItems").textContent = `${totalMandatory} Item`;
-    }
-
-    // RENDER CHECKLIST DENGAN FILTER SECTION
-    function renderChecklist(filterSection) {
-      const container = document.getElementById("checklistContainer");
-      container.innerHTML = "";
-
-      let countRendered = 0;
-
-      Object.keys(globalChecklistData).forEach((sectionName) => {
-        if (filterSection !== "ALL" && sectionName.toLowerCase() !== filterSection.toLowerCase()) {
-          return; // Skip section yang tidak cocok dengan filter
+      // State Checklist & Dashboard Data
+      const [checklistItems, setChecklistItems] = useState({});
+      const [dashboardData, setDashboardData] = useState({
+        currentTier: 'Bronze',
+        unfinishedCounter: {
+          'H1 Premises': 0, 'H1 People': 0, 'H1 Process': 0,
+          'H23 Premises': 0, 'H23 People': 0, 'H23 Process': 0
         }
-
-        const sectionDiv = document.createElement("div");
-        sectionDiv.className = "border border-slate-200 rounded-xl p-4 bg-slate-50/50 mb-6";
-        
-        let html = `
-          <div class="flex items-center justify-between border-b pb-2 mb-4">
-            <h3 class="font-bold text-blue-800 text-md flex items-center gap-2">
-              <i class="fa-solid fa-folder-open text-blue-600"></i> ${sectionName}
-            </h3>
-            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded-full">
-              ${globalChecklistData[sectionName].length} Item
-            </span>
-          </div>
-        `;
-
-        globalChecklistData[sectionName].forEach((item) => {
-          countRendered++;
-          const isMandatory = item.wajibFoto;
-          
-          // Penentuan Warna Badge Concern
-          let badgeColor = "bg-slate-700 text-white";
-          if (item.Kelas_Badge === "S") badgeColor = "bg-red-600 text-white";
-          else if (item.Kelas_Badge === "G") badgeColor = "bg-amber-500 text-white";
-          else if (item.Kelas_Badge === "P") badgeColor = "bg-blue-600 text-white";
-
-          html += `
-            <div class="bg-white p-4 rounded-lg border ${isMandatory ? 'border-amber-300 shadow-sm' : 'border-slate-200'} mb-4">
-              
-              <!-- HEADER ITEM: NO, NAMA, & BADGE -->
-              <div class="flex flex-wrap justify-between items-start gap-2 mb-2">
-                <p class="font-semibold text-slate-800 text-sm md:text-base flex-1">
-                  ${item.noItem}. ${item.title}
-                </p>
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-bold px-2 py-0.5 rounded ${badgeColor}">
-                    Badge ${item.Kelas_Badge}
-                  </span>
-                  ${isMandatory ? `
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200">
-                      <i class="fa-solid fa-camera mr-0.5"></i> Mandatory Foto
-                    </span>
-                  ` : ''}
-                </div>
-              </div>
-
-              <!-- PANDUAN AUDIT -->
-              ${item.panduan && item.panduan.length ? `
-                <div class="text-xs text-slate-500 bg-slate-50 p-2 rounded mb-3 border border-slate-100">
-                  <span class="font-semibold text-slate-600">Panduan:</span> ${item.panduan.join(' ')}
-                </div>
-              ` : ''}
-
-              <!-- INPUTS PENILAIAN, CATATAN, FOTO -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Penilaian *</label>
-                  <select id="hasil_${item.id}" required class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                    <option value="">-- Pilih --</option>
-                    <option value="Exist Good (EG)">Exist Good (EG)</option>
-                    <option value="Exist Not Good (ENG)">Exist Not Good (ENG)</option>
-                    <option value="Not Exist (NE)">Not Exist (NE)</option>
-                    <option value="Not Available (NA)">Not Available (NA)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Temuan</label>
-                  <input type="text" id="catatan_${item.id}" placeholder="Keterangan temuan auditor" class="w-full text-sm p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">
-                    Foto Bukti ${isMandatory ? '<span class="text-red-600 font-bold">(Wajib) *</span>' : '<span class="text-slate-400 font-normal">(Opsional)</span>'}
-                  </label>
-                  <input type="file" id="foto_${item.id}" accept="image/*" ${isMandatory ? 'required' : ''} class="w-full text-xs p-1 bg-slate-50 border border-slate-300 rounded-md">
-                </div>
-              </div>
-
-            </div>
-          `;
-        });
-
-        sectionDiv.innerHTML = html;
-        container.appendChild(sectionDiv);
       });
 
-      if (countRendered === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-center py-6">Tidak ada item checklist untuk panel section ini.</p>`;
-      }
-    }
-
-    // HANDLER JIKA FILTER DROPDOWN DIUBAH
-    function filterChecklist() {
-      const selected = document.getElementById("sectionFilter").value;
-      renderChecklist(selected);
-    }
-
-    // FUNGSI KOMPRESI FOTO
-    function processImage(file) {
-      return new Promise((resolve) => {
-        if (!file) resolve("-");
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 600;
-            const scale = MAX_WIDTH / img.width;
-            canvas.width = MAX_WIDTH;
-            canvas.height = img.height * scale;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6));
-          };
-        };
-      });
-    }
-
-    // 3. SUBMIT FORM KE BACKEND
-    async function submitForm(event) {
-      event.preventDefault();
-
-      const btnSubmit = document.getElementById("btnSubmit");
-      btnSubmit.disabled = true;
-      btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mengirim Data...`;
-
-      try {
-        const meta = {
-          cabang: document.getElementById("cabang").value,
-          auditor: document.getElementById("auditor").value,
-          phone: document.getElementById("phone").value,
-          jabatan: document.getElementById("jabatan").value
-        };
-
-        const answers = {};
-
-        for (const sectionName of Object.keys(globalChecklistData)) {
-          for (const item of globalChecklistData[sectionName]) {
-            const hasilEl = document.getElementById(`hasil_${item.id}`);
-            const catatanEl = document.getElementById(`catatan_${item.id}`);
-            const photoEl = document.getElementById(`foto_${item.id}`);
-
-            // Ambil input jika elemen ter-render di DOM
-            if (hasilEl) {
-              const hasilVal = hasilEl.value;
-              const catatanVal = catatanEl ? catatanEl.value : "";
-              const photoFile = (photoEl && photoEl.files.length) ? photoEl.files[0] : null;
-
-              if (hasilVal !== "") {
-                const photoBase64 = await processImage(photoFile);
-                let poin = (hasilVal === "Exist Good (EG)") ? (item.poinStandar || 10) : 0;
-
-                answers[item.id] = {
-                  idChecklist: item.id,
-                  section: sectionName,
-                  title: item.title,
-                  Kelas_Badge: item.Kelas_Badge,
-                  hasil: hasilVal,
-                  poin: poin,
-                  catatan: catatanVal || "-",
-                  photoBase64: photoBase64
-                };
-              }
-            }
-          }
+      // Fetch Master Cabang saat pertama kali dimuat
+      useEffect(() => {
+        if (gasUrl && gasUrl !== "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA") {
+          loadCabangList();
         }
+      }, [gasUrl]);
 
-        if (Object.keys(answers).length === 0) {
-          alert("Silakan isi minimal satu penilaian checklist sebelum mengirim.");
-          btnSubmit.disabled = false;
-          btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Kirim Hasil Audit</span>`;
+      const loadCabangList = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${gasUrl}?action=getCabang`);
+          const data = await res.json();
+          if (Array.isArray(data)) setCabangList(data);
+        } catch (err) {
+          alert("Gagal memuat Master Cabang dari Google Sheet. Pastikan Web App URL sudah benar.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Mulai / Lanjutkan Sesi Audit
+      const handleStartAudit = async (targetView = 'dashboard') => {
+        if (!kodeCabang || !namaAuditor) {
+          alert("Silakan pilih Cabang dan isi Nama Auditor terlebih dahulu!");
           return;
         }
 
-        const response = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ meta: meta, answers: answers })
-        });
+        setLoading(true);
+        try {
+          // Init / Resume Session
+          const sessionRes = await fetch(`${gasUrl}?action=startOrResumeSession&kodeCabang=${kodeCabang}&namaUser=${encodeURIComponent(namaAuditor)}&jabatan=${encodeURIComponent(jabatan)}&section=${selectedSection}`);
+          const sessionData = await sessionRes.json();
+          
+          if (sessionData.sessionId) {
+            setSessionId(sessionData.sessionId);
+            setNamaCabang(sessionData.namaCabang);
+          }
 
-        const result = await response.json();
+          // Load Dashboard
+          const dashRes = await fetch(`${gasUrl}?action=getDashboard&kodeCabang=${kodeCabang}`);
+          const dashData = await dashRes.json();
+          if (dashData.status === 'success') {
+            setDashboardData(dashData);
+          }
 
-        if (result.status === "success") {
-          alert("Berhasil! Seluruh data hasil audit telah berhasil tersimpan ke Google Sheet.");
-          document.getElementById("auditForm").reset();
-          switchTab('dashboard');
-        } else {
-          alert("Gagal menyimpan data: " + result.message);
+          // Load Items
+          const checkRes = await fetch(`${gasUrl}?action=getChecklist&kodeCabang=${kodeCabang}&section=${selectedSection}`);
+          const checkData = await checkRes.json();
+          setChecklistItems(checkData);
+
+          setView(targetView);
+        } catch (err) {
+          alert("Gagal menghubungi server backend GAS: " + err.toString());
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen pb-12">
+          {/* Header Navigation */}
+          <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('setup')}>
+                <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-indigo-600/40">
+                  N
+                </div>
+                <div>
+                  <h1 className="text-base font-extrabold text-white leading-none">NOS AUDIT SYSTEM</h1>
+                  <span className="text-[10px] font-semibold text-slate-400">Monitoring Checklist Cabang</span>
+                </div>
+              </div>
+
+              {kodeCabang && (
+                <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                  <div className="text-right text-xs">
+                    <p className="font-bold text-white">{namaCabang || kodeCabang}</p>
+                    <p className="text-[10px] text-slate-400">{namaAuditor || 'Auditor'}</p>
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <button 
+                      onClick={() => handleStartAudit('dashboard')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${view === 'dashboard' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    >
+                      Dashboard
+                    </button>
+                    <button 
+                      onClick={() => handleStartAudit('form')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${view === 'form' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    >
+                      Form Checklist
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* MAIN CONTAINER */}
+          <main className="max-w-7xl mx-auto px-4 pt-6">
+            
+            {/* SCREEN 1: SETUP CABANG & AUDITOR */}
+            {view === 'setup' && (
+              <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-black text-white">Mulai Audit Cabang</h2>
+                  <p className="text-sm text-slate-400">Pilih lokasi cabang dan isi identitas auditor sebelum mengisi checklist</p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Select Cabang */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">1. Pilih Cabang</label>
+                    <select
+                      value={kodeCabang}
+                      onChange={(e) => {
+                        setKodeCabang(e.target.value);
+                        const c = cabangList.find(x => x.kodeCabang === e.target.value);
+                        if (c) setNamaCabang(c.namaCabang);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">-- Pilih Cabang (From Master_Cabang) --</option>
+                      {cabangList.map((c) => (
+                        <option key={c.kodeCabang} value={c.kodeCabang}>
+                          {c.kodeCabang} - {c.namaCabang} ({c.region})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Input Auditor */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">2. Nama Auditor</label>
+                    <input
+                      type="text"
+                      placeholder="Masukkan nama lengkap auditor..."
+                      value={namaAuditor}
+                      onChange={(e) => setNamaAuditor(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Input Jabatan */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">3. Jabatan Auditor</label>
+                    <input
+                      type="text"
+                      placeholder="E.g., Auditor Regional / Supervisor"
+                      value={jabatan}
+                      onChange={(e) => setJabatan(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col gap-3">
+                  <button
+                    onClick={() => handleStartAudit('dashboard')}
+                    disabled={loading}
+                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm disabled:opacity-50"
+                  >
+                    {loading ? "Menghubungkan ke Google Sheet..." : "Buka Dashboard Audit →"}
+                  </button>
+                  <button
+                    onClick={() => handleStartAudit('form')}
+                    disabled={loading}
+                    className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl transition text-sm disabled:opacity-50"
+                  >
+                    Langsung Isi Form Checklist →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 2: DASHBOARD GAMIFIKASI */}
+            {view === 'dashboard' && (
+              <DashboardView 
+                dashboardData={dashboardData} 
+                namaCabang={namaCabang || kodeCabang}
+                onGoToForm={(sec) => {
+                  setSelectedSection(sec || 'ALL');
+                  handleStartAudit('form');
+                }}
+              />
+            )}
+
+            {/* SCREEN 3: FORM CHECKLIST */}
+            {view === 'form' && (
+              <FormAuditView 
+                kodeCabang={kodeCabang}
+                namaCabang={namaCabang}
+                namaAuditor={namaAuditor}
+                jabatan={jabatan}
+                selectedSection={selectedSection}
+                setSelectedSection={setSelectedSection}
+                checklistItems={checklistItems}
+                gasUrl={gasUrl}
+                sessionId={sessionId}
+                onRefreshItems={() => handleStartAudit('form')}
+              />
+            )}
+
+          </main>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // KOMPONEN DASHBOARD GAMIFIKASI
+    // ==========================================
+    function DashboardView({ dashboardData, namaCabang, onGoToForm }) {
+      const activeTier = TIER_CONFIG[dashboardData.currentTier] || TIER_CONFIG.Bronze;
+      const unfinished = dashboardData.unfinishedCounter || {};
+
+      const sections = [
+        { key: 'H1 Premises', label: 'H1 Premises' },
+        { key: 'H1 People', label: 'H1 People' },
+        { key: 'H1 Process', label: 'H1 Process' },
+        { key: 'H23 Premises', label: 'H23 Premises' },
+        { key: 'H23 People', label: 'H23 People' },
+        { key: 'H23 Process', label: 'H23 Process' }
+      ];
+
+      return (
+        <div className="space-y-8">
+          {/* Hero Banner Status Grading */}
+          <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${activeTier.gradient} border ${activeTier.border} p-6 md:p-8 shadow-2xl ${activeTier.glow}`}>
+            <div className="absolute -right-8 -bottom-8 opacity-10 text-[180px] select-none pointer-events-none">
+              {activeTier.icon}
+            </div>
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-5 text-center md:text-left">
+                <span className="text-6xl md:text-8xl filter drop-shadow-xl">{activeTier.icon}</span>
+                <div>
+                  <span className="text-xs font-bold tracking-widest text-amber-300 uppercase bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                    Status Audit Terbaru
+                  </span>
+                  <h2 className={`text-4xl md:text-6xl font-black ${activeTier.textAccent} mt-2 tracking-tight`}>
+                    {activeTier.name}
+                  </h2>
+                  <p className="text-slate-300 text-sm font-semibold mt-1">{activeTier.subtitle} - {namaCabang}</p>
+                </div>
+              </div>
+
+              {/* Card Tantangan */}
+              <div className="w-full md:max-w-md bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl p-5 space-y-3">
+                <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                  🔥 Challenge Naik Level
+                </span>
+                <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
+                  {activeTier.challengeText}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Unfinished Counter Cards */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              📊 Sisa Checklist Belum Dikerjakan Per Section
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sections.map((sec) => {
+                const count = unfinished[sec.key] || 0;
+                const isComplete = count === 0;
+
+                return (
+                  <div
+                    key={sec.key}
+                    onClick={() => onGoToForm(sec.key)}
+                    className={`rounded-2xl border p-5 transition-all cursor-pointer ${
+                      isComplete
+                        ? 'bg-emerald-950/20 border-emerald-800/40 hover:border-emerald-500'
+                        : count > 5
+                        ? 'bg-slate-900 border-rose-900/50 hover:border-rose-500'
+                        : 'bg-slate-900 border-slate-800 hover:border-indigo-500'
+                    } hover:-translate-y-1 hover:shadow-xl`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-white text-base">{sec.label}</h4>
+                      <span className="text-xs text-indigo-400 font-bold">Buka →</span>
+                    </div>
+
+                    <div className="mt-4 flex items-end justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">Unfinished Item</span>
+                        <div className={`text-3xl font-black ${isComplete ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {count} <span className="text-xs font-normal text-slate-500">Item</span>
+                        </div>
+                      </div>
+
+                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                        isComplete ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300'
+                      }`}>
+                        {isComplete ? '✓ Selesai' : 'In Progress'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // KOMPONEN FORM CHECKLIST AUDIT
+    // ==========================================
+    function FormAuditView({ kodeCabang, namaCabang, namaAuditor, jabatan, selectedSection, setSelectedSection, checklistItems, gasUrl, sessionId, onRefreshItems }) {
+      const [answers, setAnswers] = useState({});
+      const [submitting, setSubmitting] = useState(false);
+
+      const allSections = Object.keys(checklistItems);
+      const currentItems = selectedSection === 'ALL'
+        ? Object.values(checklistItems).flat()
+        : (checklistItems[selectedSection] || []);
+
+      const handleAnswerChange = (idChecklist, itemData, value) => {
+        setAnswers(prev => ({
+          ...prev,
+          [idChecklist]: {
+            ...itemData,
+            hasilPenilaian: value
+          }
+        }));
+      };
+
+      const handlePhotoChange = (idChecklist, file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAnswers(prev => ({
+            ...prev,
+            [idChecklist]: {
+              ...prev[idChecklist],
+              photoBase64: reader.result
+            }
+          }));
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleSubmitAudit = async () => {
+        if (Object.keys(answers).length === 0) {
+          alert("Belum ada item checklist yang dinilai!");
+          return;
         }
 
-      } catch (err) {
-        console.error("Submit Error:", err);
-        alert("Terjadi kesalahan teknis saat mengirim data. Pastikan koneksi internet stabil.");
-      } finally {
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Kirim Hasil Audit</span>`;
-      }
+        setSubmitting(true);
+        try {
+          const payload = {
+            action: 'submitResponse',
+            meta: { kodeCabang, auditor: namaAuditor, sessionId },
+            answers: answers
+          };
+
+          const res = await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (data.status === 'success') {
+            alert("Hasil audit berhasil disimpan ke Google Sheets!");
+            setAnswers({});
+            onRefreshItems();
+          } else {
+            alert("Gagal menyimpan: " + data.message);
+          }
+        } catch (err) {
+          alert("Terjadi kesalahan saat menyimpan respons: " + err.toString());
+        } finally {
+          setSubmitting(false);
+        }
+      };
+
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          {/* PANEL KIRI (Informasi Cabang & Filter Section) */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Informasi Audit</h3>
+              
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-xs text-slate-500">Cabang</span>
+                  <p className="font-bold text-white">{namaCabang || kodeCabang}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500">Auditor</span>
+                  <p className="font-bold text-white">{namaAuditor} ({jabatan || '-'})</p>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500">Session ID</span>
+                  <p className="font-mono text-[10px] text-indigo-400">{sessionId || 'SESS-ACTIVE'}</p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800">
+                <label className="block text-xs font-bold uppercase text-slate-400 mb-2">Filter Section</label>
+                <select
+                  value={selectedSection}
+                  onChange={(e) => setSelectedSection(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                >
+                  <option value="ALL">Semua Section</option>
+                  {allSections.map(sec => (
+                    <option key={sec} value={sec}>{sec}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Simpan & Pause Button */}
+            <div className="space-y-2">
+              <button
+                onClick={handleSubmitAudit}
+                disabled={submitting || Object.keys(answers).length === 0}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition text-sm disabled:opacity-40"
+              >
+                {submitting ? "Menyimpan ke Sheet..." : `Simpan (${Object.keys(answers).length}) Jawaban`}
+              </button>
+              <p className="text-[11px] text-slate-400 text-center">
+                User lain dapat melanjutkan sisa item yang belum dinilai secara real-time.
+              </p>
+            </div>
+          </div>
+
+          {/* PANEL KANAN (Daftar Item Audit) */}
+          <div className="lg:col-span-3 space-y-4">
+            {currentItems.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+                <p className="text-base font-bold text-white">Seluruh checklist pada section ini sudah dikerjakan!</p>
+                <p className="text-xs mt-1">Pilih section lain pada panel sebelah kiri atau periksa status di Dashboard.</p>
+              </div>
+            ) : (
+              currentItems.map((item, idx) => {
+                const currentAnswer = answers[item.idChecklist]?.hasilPenilaian || '';
+                const badge = item.kelasBadge || 'P';
+
+                return (
+                  <div key={item.idChecklist} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition">
+                    
+                    {/* Header Item */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-indigo-950 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-800">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">{item.section}</span>
+                      </div>
+
+                      {/* BADGE INDIKATOR MANDATORY */}
+                      <div className="flex items-center gap-2">
+                        {badge === 'S,G,P' && (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            🛡️ Silver, Gold, Platinum Mandatory
+                          </span>
+                        )}
+                        {badge === 'G,P' && (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">
+                            ⭐ Gold & Platinum Mandatory
+                          </span>
+                        )}
+                        {badge === 'P' && (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            👑 Platinum Mandatory Only
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content Item */}
+                    <div>
+                      <h4 className="text-base font-bold text-white">{item.namaItem}</h4>
+                      {item.penjelasan && (
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                          {item.penjelasan}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 4 OPSI HASIL PENILAIAN */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                      {[
+                        { label: 'Exist Good', val: 'Exist Good', score: '+1 Point', color: 'peer-checked:bg-emerald-600 peer-checked:border-emerald-400' },
+                        { label: 'Exist Not Good', val: 'Exist Not Good', score: '-1 Point', color: 'peer-checked:bg-rose-600 peer-checked:border-rose-400' },
+                        { label: 'Not Exist', val: 'Not Exist', score: '0 Point', color: 'peer-checked:bg-slate-700 peer-checked:border-slate-500' },
+                        { label: 'N/A', val: 'N/A', score: 'Anulir', color: 'peer-checked:bg-amber-700 peer-checked:border-amber-500' }
+                      ].map((opt) => (
+                        <label key={opt.val} className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`item_${item.idChecklist}`}
+                            value={opt.val}
+                            checked={currentAnswer === opt.val}
+                            onChange={() => handleAnswerChange(item.idChecklist, item, opt.val)}
+                            className="peer sr-only"
+                          />
+                          <div className={`p-3 rounded-xl border border-slate-800 bg-slate-950 text-center transition ${opt.color}`}>
+                            <p className="text-xs font-bold text-white">{opt.label}</p>
+                            <span className="text-[10px] text-slate-400 font-semibold">{opt.score}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* UPLOAD FOTO BUKTI (JIKA DIWAJIBKAN) */}
+                    {item.needPhoto && (
+                      <div className="pt-2">
+                        <label className="block text-[11px] font-bold text-amber-400 mb-1">
+                          📸 Wajib Lampirkan Foto Bukti:
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoChange(item.idChecklist, e.target.files[0])}
+                          className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500"
+                        />
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+        </div>
+      );
     }
+
+    // Render React App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
