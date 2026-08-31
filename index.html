@@ -162,29 +162,29 @@
 
       return (
         <div className="min-h-screen pb-12">
-          {/* HEADER NAVIGATION DENGAN LOGO DAYA MOTOR */}
-          <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
+          {/* HEADER NAVIGATION DENGAN LOGO DAYA MOTOR 3D & LEBIH BESAR */}
+          <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3.5">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('setup')}>
-                {/* LOGO DAYA MOTOR RESMI */}
+              <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('setup')}>
+                {/* LOGO DAYA MOTOR 3D EFFEKT */}
                 <img 
                   src="Logo-DM-Putih.png" 
                   alt="Daya Motor" 
-                  className="h-9 w-auto object-contain"
+                  className="h-11 md:h-13 w-auto object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] drop-shadow-[0_0_12px_rgba(99,102,241,0.4)] transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
                     e.target.style.display='none';
                     e.target.nextSibling.style.display='flex';
                   }}
                 />
                 {/* Fallback Badge jika foto gagal muat */}
-                <div className="w-9 h-9 bg-indigo-600 rounded-xl hidden items-center justify-center text-white font-extrabold text-lg shadow-lg">
+                <div className="w-11 h-11 bg-indigo-600 rounded-xl hidden items-center justify-center text-white font-extrabold text-xl shadow-lg">
                   N
                 </div>
 
-                <div className="border-l border-slate-700 pl-3">
-                  <h1 className="text-base font-extrabold text-white leading-none">NOS AUDIT SYSTEM</h1>
-                  <span className="text-[10px] font-semibold text-slate-400">Self-Assessment & Monitoring</span>
+                <div className="border-l border-slate-700/80 pl-4">
+                  <h1 className="text-base md:text-lg font-black text-white leading-none tracking-tight">NOS AUDIT SYSTEM</h1>
+                  <span className="text-[10px] md:text-xs font-semibold text-slate-400">Self-Assessment & Monitoring</span>
                 </div>
               </div>
 
@@ -216,12 +216,16 @@
           {/* MAIN CONTAINER */}
           <main className="max-w-7xl mx-auto px-4 pt-6">
             
-            {/* SCREEN 1: SETUP CABANG & AUDITOR */}
+            {/* SCREEN 1: SETUP CABANG & AUDITOR DENGAN LOGO MENONJOL 3D */}
             {view === 'setup' && (
               <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
-                <div className="text-center space-y-2">
-                  <img src="Logo-DM-Putih.png" alt="Daya Motor" className="h-12 w-auto mx-auto mb-2 object-contain" />
-                  <h2 className="text-2xl font-black text-white">Audit & Self-Assessment</h2>
+                <div className="text-center space-y-3">
+                  <img 
+                    src="Logo-DM-Putih.png" 
+                    alt="Daya Motor" 
+                    className="h-20 md:h-24 w-auto mx-auto mb-2 object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] drop-shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-transform duration-300 hover:scale-105" 
+                  />
+                  <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Audit & Self-Assessment</h2>
                   <p className="text-sm text-slate-400">Identitas auditor & cabang akan otomatis tersimpan di perangkat ini</p>
                 </div>
 
