@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NOS Monitoring Audit Cabang</title>
+  <title>NOS Monitoring Audit Cabang - Daya Motor</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,7 @@
     // ==========================================
     // ⚠️ GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ⚠️
     // ==========================================
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
+    const DEFAULT_GAS_URL = "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA";
 
     // Data Konfigurasi Visual Tier Gamifikasi
     const TIER_CONFIG = {
@@ -81,7 +81,7 @@
       const [cabangList, setCabangList] = useState([]);
       const [loading, setLoading] = useState(false);
 
-      // State Data Audit dengan AUTO-MEMORY LocalStorage
+      // State Data Audit dengan LocalStorage Memory
       const [kodeCabang, setKodeCabang] = useState(localStorage.getItem('NOS_KODE_CABANG') || '');
       const [namaCabang, setNamaCabang] = useState(localStorage.getItem('NOS_NAMA_CABANG') || '');
       const [namaAuditor, setNamaAuditor] = useState(localStorage.getItem('NOS_AUDITOR_NAME') || '');
@@ -99,7 +99,6 @@
         }
       });
 
-      // Simpan Profil Auditor ke LocalStorage saat diubah
       useEffect(() => {
         if (namaAuditor) localStorage.setItem('NOS_AUDITOR_NAME', namaAuditor);
         if (jabatan) localStorage.setItem('NOS_AUDITOR_JABATAN', jabatan);
@@ -107,7 +106,6 @@
         if (namaCabang) localStorage.setItem('NOS_NAMA_CABANG', namaCabang);
       }, [namaAuditor, jabatan, kodeCabang, namaCabang]);
 
-      // Fetch Master Cabang saat pertama kali dimuat
       useEffect(() => {
         if (gasUrl && gasUrl !== "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA") {
           loadCabangList();
@@ -127,7 +125,6 @@
         }
       };
 
-      // Mulai / Lanjutkan Sesi Audit
       const handleStartAudit = async (targetView = 'dashboard') => {
         if (!kodeCabang || !namaAuditor) {
           alert("Silakan pilih Cabang dan isi Nama Auditor terlebih dahulu!");
@@ -136,7 +133,6 @@
 
         setLoading(true);
         try {
-          // Init / Resume Session
           const sessionRes = await fetch(`${gasUrl}?action=startOrResumeSession&kodeCabang=${kodeCabang}&namaUser=${encodeURIComponent(namaAuditor)}&jabatan=${encodeURIComponent(jabatan)}&section=${selectedSection}`);
           const sessionData = await sessionRes.json();
           
@@ -146,14 +142,12 @@
             localStorage.setItem('NOS_NAMA_CABANG', sessionData.namaCabang);
           }
 
-          // Load Dashboard
           const dashRes = await fetch(`${gasUrl}?action=getDashboard&kodeCabang=${kodeCabang}`);
           const dashData = await dashRes.json();
           if (dashData.status === 'success') {
             setDashboardData(dashData);
           }
 
-          // Load Items
           const checkRes = await fetch(`${gasUrl}?action=getChecklist&kodeCabang=${kodeCabang}&section=${selectedSection}`);
           const checkData = await checkRes.json();
           setChecklistItems(checkData);
@@ -168,14 +162,28 @@
 
       return (
         <div className="min-h-screen pb-12">
-          {/* Header Navigation */}
+          {/* HEADER NAVIGATION DENGAN LOGO DAYA MOTOR */}
           <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
+              
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('setup')}>
-                <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-indigo-600/40">
+                {/* LOGO DAYA MOTOR RESMI */}
+                <img 
+                  src="Logo-DM-Putih.png" 
+                  alt="Daya Motor" 
+                  className="h-9 w-auto object-contain"
+                  onError={(e) => {
+                    // Fallback jika file foto logo belum diupload
+                    e.target.style.display='none';
+                    e.target.nextSibling.style.display='flex';
+                  }}
+                />
+                {/* Fallback Badge 'N' jika logo belum di-upload */}
+                <div className="w-9 h-9 bg-indigo-600 rounded-xl hidden items-center justify-center text-white font-extrabold text-lg shadow-lg">
                   N
                 </div>
-                <div>
+
+                <div className="border-l border-slate-700 pl-3">
                   <h1 className="text-base font-extrabold text-white leading-none">NOS AUDIT SYSTEM</h1>
                   <span className="text-[10px] font-semibold text-slate-400">Self-Assessment & Monitoring</span>
                 </div>
@@ -213,12 +221,12 @@
             {view === 'setup' && (
               <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
                 <div className="text-center space-y-2">
+                  <img src="Logo-DM-Putih.png" alt="Daya Motor" className="h-12 w-auto mx-auto mb-2 object-contain" />
                   <h2 className="text-2xl font-black text-white">Audit & Self-Assessment</h2>
                   <p className="text-sm text-slate-400">Identitas auditor & cabang akan otomatis tersimpan di perangkat ini</p>
                 </div>
 
                 <div className="space-y-4">
-                  {/* Select Cabang */}
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-400 mb-2">1. Pilih Cabang</label>
                     <select
@@ -242,7 +250,6 @@
                     </select>
                   </div>
 
-                  {/* Input Auditor (Auto-Remember) */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <label className="block text-xs font-bold uppercase text-slate-400">2. Nama Auditor</label>
@@ -257,7 +264,6 @@
                     />
                   </div>
 
-                  {/* Input Jabatan (Auto-Remember) */}
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-400 mb-2">3. Jabatan Auditor</label>
                     <input
@@ -301,7 +307,7 @@
               />
             )}
 
-            {/* SCREEN 3: FORM CHECKLIST (DENGAN QUICK FILTERS & AUTO-SAVE) */}
+            {/* SCREEN 3: FORM CHECKLIST */}
             {view === 'form' && (
               <FormAuditView 
                 kodeCabang={kodeCabang}
@@ -340,7 +346,6 @@
 
       return (
         <div className="space-y-8">
-          {/* Hero Banner Status Grading */}
           <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${activeTier.gradient} border ${activeTier.border} p-6 md:p-8 shadow-2xl ${activeTier.glow}`}>
             <div className="absolute -right-8 -bottom-8 opacity-10 text-[180px] select-none pointer-events-none">
               {activeTier.icon}
@@ -360,7 +365,6 @@
                 </div>
               </div>
 
-              {/* Card Tantangan Self-Assessment */}
               <div className="w-full md:max-w-md bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl p-5 space-y-3">
                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
                   🔥 Target Self-Assessment
@@ -372,7 +376,6 @@
             </div>
           </div>
 
-          {/* Unfinished Counter Cards */}
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               📊 Sisa Checklist Belum Dikerjakan Per Section
@@ -424,38 +427,28 @@
     }
 
     // ==========================================
-    // KOMPONEN FORM CHECKLIST (DENGAN TAB FILTER)
+    // KOMPONEN FORM CHECKLIST
     // ==========================================
     function FormAuditView({ kodeCabang, namaCabang, namaAuditor, jabatan, selectedSection, setSelectedSection, checklistItems, gasUrl, sessionId, onRefreshItems }) {
       const [answers, setAnswers] = useState({});
       const [saveStatusMap, setSaveStatusMap] = useState({});
-      
-      // State Filter Cepat Baru
-      const [quickFilter, setQuickFilter] = useState('ALL'); // 'ALL', 'MANDATORY', 'UNFINISHED', 'ISSUES'
+      const [quickFilter, setQuickFilter] = useState('ALL');
 
       const allSections = Object.keys(checklistItems);
       const rawItems = selectedSection === 'ALL'
         ? Object.values(checklistItems).flat()
         : (checklistItems[selectedSection] || []);
 
-      // Filter Item Berdasarkan Tab
       const currentItems = rawItems.filter((item) => {
         const itemId = item.idChecklist;
         const currentAns = answers[itemId]?.hasilPenilaian || item.hasilPenilaian || '';
 
-        if (quickFilter === 'MANDATORY') {
-          return item.kelasBadge && item.kelasBadge !== '';
-        }
-        if (quickFilter === 'UNFINISHED') {
-          return !currentAns;
-        }
-        if (quickFilter === 'ISSUES') {
-          return currentAns === 'Exist Not Good' || currentAns === 'Not Exist';
-        }
+        if (quickFilter === 'MANDATORY') return item.kelasBadge && item.kelasBadge !== '';
+        if (quickFilter === 'UNFINISHED') return !currentAns;
+        if (quickFilter === 'ISSUES') return currentAns === 'Exist Not Good' || currentAns === 'Not Exist';
         return true;
       });
 
-      // AUTO-SAVE FUNGSI
       const autoSaveSingleItem = async (itemData, updatedAnswer, updatedPhotoBase64) => {
         const itemId = itemData.idChecklist;
         setSaveStatusMap(prev => ({ ...prev, [itemId]: 'saving' }));
@@ -526,8 +519,6 @@
 
       return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
-          {/* PANEL KIRI (Informasi Audit & Filter Section) */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Informasi Audit</h3>
@@ -562,7 +553,6 @@
               </div>
             </div>
 
-            {/* Status Auto-Save Info */}
             <div className="bg-emerald-950/40 border border-emerald-800/60 rounded-2xl p-4 text-emerald-300 text-xs space-y-2">
               <div className="flex items-center gap-2 font-bold text-emerald-400">
                 <span className="relative flex h-2 w-2">
@@ -583,10 +573,7 @@
             </div>
           </div>
 
-          {/* PANEL KANAN (Daftar Item Audit + Quick Filter Tabs) */}
           <div className="lg:col-span-3 space-y-4">
-            
-            {/* TOOLBAR FILTER CEPAT (BARU) */}
             <div className="flex flex-wrap gap-2 bg-slate-900 border border-slate-800 p-2 rounded-2xl overflow-x-auto">
               {[
                 { id: 'ALL', label: '🌐 Semua Item' },
@@ -608,7 +595,6 @@
               ))}
             </div>
 
-            {/* DAFTAR ITEM CHECKLIST */}
             {currentItems.length === 0 ? (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-2">
                 <p className="text-base font-bold text-white">Tidak ada item yang sesuai dengan filter ini!</p>
@@ -624,8 +610,6 @@
 
                 return (
                   <div key={itemId} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition relative">
-                    
-                    {/* Header Item & Badges */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-lg bg-indigo-950 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-800">
@@ -635,7 +619,6 @@
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {/* INDIKATOR AUTO-SAVE */}
                         {saveState === 'saving' && (
                           <span className="text-[11px] font-bold text-amber-400 animate-pulse bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-800/60">
                             🔄 Menyimpan...
@@ -652,7 +635,6 @@
                           </span>
                         )}
 
-                        {/* BADGE MANDATORY TIER */}
                         {badge === 'S,G,P' && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             🛡️ Silver, Gold, Platinum Mandatory
@@ -671,7 +653,6 @@
                       </div>
                     </div>
 
-                    {/* Content Item */}
                     <div>
                       <h4 className="text-base font-bold text-white">{item.namaItem}</h4>
                       {item.penjelasan && (
@@ -681,7 +662,6 @@
                       )}
                     </div>
 
-                    {/* 4 OPSI PENILAIAN */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                       {[
                         { label: 'Exist Good', val: 'Exist Good', score: '+1 Point', color: 'peer-checked:bg-emerald-600 peer-checked:border-emerald-400' },
@@ -706,7 +686,6 @@
                       ))}
                     </div>
 
-                    {/* KAMERA DIRECT CAPTURE & UPLOAD */}
                     <div className="pt-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
                         <div>
@@ -734,7 +713,6 @@
                         </div>
                       </div>
 
-                      {/* Preview Foto */}
                       {currentPhoto && (
                         <div className="mt-2 flex items-center gap-3 bg-slate-950/60 p-2 rounded-xl border border-slate-800">
                           <img src={currentPhoto} alt="Preview Foto Bukti" className="w-12 h-12 object-cover rounded-lg border border-slate-700" />
@@ -753,7 +731,6 @@
       );
     }
 
-    // Render React App
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
