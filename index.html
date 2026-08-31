@@ -29,7 +29,7 @@
     // ==========================================
     // ⚠️ GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ⚠️
     // ==========================================
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
+    const DEFAULT_GAS_URL = "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA";
 
     // Data Konfigurasi Visual Tier Gamifikasi
     const TIER_CONFIG = {
@@ -286,7 +286,7 @@
               />
             )}
 
-            {/* SCREEN 3: FORM CHECKLIST */}
+            {/* SCREEN 3: FORM CHECKLIST (DENGAN AUTO-SAVE & CAMERA CAPTURE) */}
             {view === 'form' && (
               <FormAuditView 
                 kodeCabang={kodeCabang}
@@ -409,54 +409,35 @@
     }
 
     // ==========================================
-    // KOMPONEN FORM CHECKLIST AUDIT
+    // KOMPONEN FORM CHECKLIST (AUTO-SAVE & KAMERA)
     // ==========================================
     function FormAuditView({ kodeCabang, namaCabang, namaAuditor, jabatan, selectedSection, setSelectedSection, checklistItems, gasUrl, sessionId, onRefreshItems }) {
       const [answers, setAnswers] = useState({});
-      const [submitting, setSubmitting] = useState(false);
+      const [saveStatusMap, setSaveStatusMap] = useState({}); // Track 'saving' | 'saved' | 'error' per item ID
 
       const allSections = Object.keys(checklistItems);
       const currentItems = selectedSection === 'ALL'
         ? Object.values(checklistItems).flat()
         : (checklistItems[selectedSection] || []);
 
-      const handleAnswerChange = (idChecklist, itemData, value) => {
-        setAnswers(prev => ({
-          ...prev,
-          [idChecklist]: {
-            ...itemData,
-            hasilPenilaian: value
-          }
-        }));
-      };
+      // FUNGSI AUTO-SAVE: Dikirim otomatis ke Google Sheets setiap kali opsi dipilih / foto diunggah
+      const autoSaveSingleItem = async (itemData, updatedAnswer, updatedPhotoBase64) => {
+        const itemId = itemData.idChecklist;
 
-      const handlePhotoChange = (idChecklist, file) => {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAnswers(prev => ({
-            ...prev,
-            [idChecklist]: {
-              ...prev[idChecklist],
-              photoBase64: reader.result
-            }
-          }));
-        };
-        reader.readAsDataURL(file);
-      };
+        // Set status item ke 'saving'
+        setSaveStatusMap(prev => ({ ...prev, [itemId]: 'saving' }));
 
-      const handleSubmitAudit = async () => {
-        if (Object.keys(answers).length === 0) {
-          alert("Belum ada item checklist yang dinilai!");
-          return;
-        }
-
-        setSubmitting(true);
         try {
           const payload = {
             action: 'submitResponse',
             meta: { kodeCabang, auditor: namaAuditor, sessionId },
-            answers: answers
+            answers: {
+              [itemId]: {
+                ...itemData,
+                hasilPenilaian: updatedAnswer,
+                photoBase64: updatedPhotoBase64 || answers[itemId]?.photoBase64 || ''
+              }
+            }
           };
 
           const res = await fetch(gasUrl, {
@@ -467,23 +448,65 @@
 
           const data = await res.json();
           if (data.status === 'success') {
-            alert("Hasil audit berhasil disimpan ke Google Sheets!");
-            setAnswers({});
-            onRefreshItems();
+            setSaveStatusMap(prev => ({ ...prev, [itemId]: 'saved' }));
           } else {
-            alert("Gagal menyimpan: " + data.message);
+            setSaveStatusMap(prev => ({ ...prev, [itemId]: 'error' }));
           }
         } catch (err) {
-          alert("Terjadi kesalahan saat menyimpan respons: " + err.toString());
-        } finally {
-          setSubmitting(false);
+          console.error("Auto-save error:", err);
+          setSaveStatusMap(prev => ({ ...prev, [itemId]: 'error' }));
         }
+      };
+
+      // Handler Ubah Opsi Penilaian
+      const handleAnswerChange = (itemData, value) => {
+        const itemId = itemData.idChecklist;
+        const currentPhoto = answers[itemId]?.photoBase64 || '';
+
+        setAnswers(prev => ({
+          ...prev,
+          [itemId]: {
+            ...itemData,
+            hasilPenilaian: value,
+            photoBase64: currentPhoto
+          }
+        }));
+
+        // Triger Auto-Save Langsung
+        autoSaveSingleItem(itemData, value, currentPhoto);
+      };
+
+      // Handler Tangkap Foto (Kamera/Galeri)
+      const handlePhotoChange = (itemData, file) => {
+        if (!file) return;
+        const itemId = itemData.idChecklist;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Photo = reader.result;
+          const currentHasil = answers[itemId]?.hasilPenilaian || itemData.hasilPenilaian || '';
+
+          setAnswers(prev => ({
+            ...prev,
+            [itemId]: {
+              ...itemData,
+              hasilPenilaian: currentHasil,
+              photoBase64: base64Photo
+            }
+          }));
+
+          // Jika opsi sudah dipilih, triger Auto-Save ulang bersama fotonya
+          if (currentHasil) {
+            autoSaveSingleItem(itemData, currentHasil, base64Photo);
+          }
+        };
+        reader.readAsDataURL(file);
       };
 
       return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          {/* PANEL KIRI (Informasi Cabang & Filter Section) */}
+          {/* PANEL KIRI (Informasi Audit & Filter) */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Informasi Audit</h3>
@@ -518,18 +541,24 @@
               </div>
             </div>
 
-            {/* Simpan & Pause Button */}
-            <div className="space-y-2">
-              <button
-                onClick={handleSubmitAudit}
-                disabled={submitting || Object.keys(answers).length === 0}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition text-sm disabled:opacity-40"
-              >
-                {submitting ? "Menyimpan ke Sheet..." : `Simpan (${Object.keys(answers).length}) Jawaban`}
-              </button>
-              <p className="text-[11px] text-slate-400 text-center">
-                User lain dapat melanjutkan sisa item yang belum dinilai secara real-time.
+            {/* Status Auto-Save Info */}
+            <div className="bg-emerald-950/40 border border-emerald-800/60 rounded-2xl p-4 text-emerald-300 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-emerald-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Auto-Save Aktif
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Jawaban otomatis terisi & tersimpan ke Google Sheets saat diklik tanpa perlu tombol manual.
               </p>
+              <button
+                onClick={onRefreshItems}
+                className="w-full mt-2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-xs transition"
+              >
+                🔄 Refresh Progress Item
+              </button>
             </div>
           </div>
 
@@ -542,13 +571,16 @@
               </div>
             ) : (
               currentItems.map((item, idx) => {
-                const currentAnswer = answers[item.idChecklist]?.hasilPenilaian || '';
+                const itemId = item.idChecklist;
+                const currentAnswer = answers[itemId]?.hasilPenilaian || '';
+                const currentPhoto = answers[itemId]?.photoBase64 || '';
+                const saveState = saveStatusMap[itemId];
                 const badge = item.kelasBadge || 'P';
 
                 return (
-                  <div key={item.idChecklist} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition">
+                  <div key={itemId} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition relative">
                     
-                    {/* Header Item */}
+                    {/* Header Item & Status Auto-Save */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-lg bg-indigo-950 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-800">
@@ -557,8 +589,25 @@
                         <span className="text-xs font-bold text-slate-400">{item.section}</span>
                       </div>
 
-                      {/* BADGE INDIKATOR MANDATORY */}
                       <div className="flex items-center gap-2">
+                        {/* INDIKATOR STATUS SAVE */}
+                        {saveState === 'saving' && (
+                          <span className="text-[11px] font-bold text-amber-400 animate-pulse bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-800/60">
+                            🔄 Menyimpan...
+                          </span>
+                        )}
+                        {saveState === 'saved' && (
+                          <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-800/60">
+                            ✅ Tersimpan
+                          </span>
+                        )}
+                        {saveState === 'error' && (
+                          <span className="text-[11px] font-bold text-rose-400 bg-rose-950/60 px-2.5 py-0.5 rounded-full border border-rose-800/60">
+                            ❌ Gagal Simpan
+                          </span>
+                        )}
+
+                        {/* BADGE MANDATORY */}
                         {badge === 'S,G,P' && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             🛡️ Silver, Gold, Platinum Mandatory
@@ -598,10 +647,10 @@
                         <label key={opt.val} className="cursor-pointer">
                           <input
                             type="radio"
-                            name={`item_${item.idChecklist}`}
+                            name={`item_${itemId}`}
                             value={opt.val}
                             checked={currentAnswer === opt.val}
-                            onChange={() => handleAnswerChange(item.idChecklist, item, opt.val)}
+                            onChange={() => handleAnswerChange(item, opt.val)}
                             className="peer sr-only"
                           />
                           <div className={`p-3 rounded-xl border border-slate-800 bg-slate-950 text-center transition ${opt.color}`}>
@@ -612,20 +661,42 @@
                       ))}
                     </div>
 
-                    {/* UPLOAD FOTO BUKTI (JIKA DIWAJIBKAN) */}
-                    {item.needPhoto && (
-                      <div className="pt-2">
-                        <label className="block text-[11px] font-bold text-amber-400 mb-1">
-                          📸 Wajib Lampirkan Foto Bukti:
-                        </label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handlePhotoChange(item.idChecklist, e.target.files[0])}
-                          className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500"
-                        />
+                    {/* AMBIL FOTO BUKTI (KAMERA DIRECT CAPTURE & FILE SELECTOR) */}
+                    <div className="pt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div>
+                          <label className="block text-[11px] font-bold text-amber-400">
+                            📸 Foto Bukti Audit {item.needPhoto ? '(Wajib)' : '(Opsional)'}:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Ambil langsung via Kamera HP atau pilih file galeri</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            id={`photo_${itemId}`}
+                            accept="image/*"
+                            capture="environment" // MEMBUKA KAMERA BELAKANG OTOMATIS DI SMARTPHONE
+                            onChange={(e) => handlePhotoChange(item, e.target.files[0])}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor={`photo_${itemId}`}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30"
+                          >
+                            <span>📷 Ambil Foto / File</span>
+                          </label>
+                        </div>
                       </div>
-                    )}
+
+                      {/* Preview Foto Jika Ada */}
+                      {currentPhoto && (
+                        <div className="mt-2 flex items-center gap-3 bg-slate-950/60 p-2 rounded-xl border border-slate-800">
+                          <img src={currentPhoto} alt="Preview Foto Bukti" className="w-12 h-12 object-cover rounded-lg border border-slate-700" />
+                          <span className="text-xs text-emerald-400 font-bold">✓ Foto terlampir & siap diunggah ke Drive</span>
+                        </div>
+                      )}
+                    </div>
 
                   </div>
                 );
