@@ -29,7 +29,7 @@
     // ==========================================
     // ⚠️ GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ⚠️
     // ==========================================
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
+    const DEFAULT_GAS_URL = "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA";
 
     // Data Konfigurasi Visual Tier Gamifikasi
     const TIER_CONFIG = {
@@ -81,11 +81,11 @@
       const [cabangList, setCabangList] = useState([]);
       const [loading, setLoading] = useState(false);
 
-      // State Data Audit
-      const [kodeCabang, setKodeCabang] = useState('');
-      const [namaCabang, setNamaCabang] = useState('');
-      const [namaAuditor, setNamaAuditor] = useState('');
-      const [jabatan, setJabatan] = useState('');
+      // State Data Audit dengan AUTO-MEMORY LocalStorage
+      const [kodeCabang, setKodeCabang] = useState(localStorage.getItem('NOS_KODE_CABANG') || '');
+      const [namaCabang, setNamaCabang] = useState(localStorage.getItem('NOS_NAMA_CABANG') || '');
+      const [namaAuditor, setNamaAuditor] = useState(localStorage.getItem('NOS_AUDITOR_NAME') || '');
+      const [jabatan, setJabatan] = useState(localStorage.getItem('NOS_AUDITOR_JABATAN') || '');
       const [selectedSection, setSelectedSection] = useState('ALL');
       const [sessionId, setSessionId] = useState('');
 
@@ -98,6 +98,14 @@
           'H23 Premises': 0, 'H23 People': 0, 'H23 Process': 0
         }
       });
+
+      // Simpan Profil Auditor ke LocalStorage saat diubah
+      useEffect(() => {
+        if (namaAuditor) localStorage.setItem('NOS_AUDITOR_NAME', namaAuditor);
+        if (jabatan) localStorage.setItem('NOS_AUDITOR_JABATAN', jabatan);
+        if (kodeCabang) localStorage.setItem('NOS_KODE_CABANG', kodeCabang);
+        if (namaCabang) localStorage.setItem('NOS_NAMA_CABANG', namaCabang);
+      }, [namaAuditor, jabatan, kodeCabang, namaCabang]);
 
       // Fetch Master Cabang saat pertama kali dimuat
       useEffect(() => {
@@ -135,6 +143,7 @@
           if (sessionData.sessionId) {
             setSessionId(sessionData.sessionId);
             setNamaCabang(sessionData.namaCabang);
+            localStorage.setItem('NOS_NAMA_CABANG', sessionData.namaCabang);
           }
 
           // Load Dashboard
@@ -168,7 +177,7 @@
                 </div>
                 <div>
                   <h1 className="text-base font-extrabold text-white leading-none">NOS AUDIT SYSTEM</h1>
-                  <span className="text-[10px] font-semibold text-slate-400">Monitoring Checklist Cabang</span>
+                  <span className="text-[10px] font-semibold text-slate-400">Self-Assessment & Monitoring</span>
                 </div>
               </div>
 
@@ -204,8 +213,8 @@
             {view === 'setup' && (
               <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-2xl font-black text-white">Mulai Audit Cabang</h2>
-                  <p className="text-sm text-slate-400">Pilih lokasi cabang dan isi identitas auditor sebelum mengisi checklist</p>
+                  <h2 className="text-2xl font-black text-white">Audit & Self-Assessment</h2>
+                  <p className="text-sm text-slate-400">Identitas auditor & cabang akan otomatis tersimpan di perangkat ini</p>
                 </div>
 
                 <div className="space-y-4">
@@ -217,7 +226,10 @@
                       onChange={(e) => {
                         setKodeCabang(e.target.value);
                         const c = cabangList.find(x => x.kodeCabang === e.target.value);
-                        if (c) setNamaCabang(c.namaCabang);
+                        if (c) {
+                          setNamaCabang(c.namaCabang);
+                          localStorage.setItem('NOS_NAMA_CABANG', c.namaCabang);
+                        }
                       }}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
                     >
@@ -230,9 +242,12 @@
                     </select>
                   </div>
 
-                  {/* Input Auditor */}
+                  {/* Input Auditor (Auto-Remember) */}
                   <div>
-                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">2. Nama Auditor</label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-xs font-bold uppercase text-slate-400">2. Nama Auditor</label>
+                      {namaAuditor && <span className="text-[10px] text-emerald-400 font-bold">✓ Tersimpan di Perangkat</span>}
+                    </div>
                     <input
                       type="text"
                       placeholder="Masukkan nama lengkap auditor..."
@@ -242,12 +257,12 @@
                     />
                   </div>
 
-                  {/* Input Jabatan */}
+                  {/* Input Jabatan (Auto-Remember) */}
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-400 mb-2">3. Jabatan Auditor</label>
                     <input
                       type="text"
-                      placeholder="E.g., Auditor Regional / Supervisor"
+                      placeholder="E.g., Auditor Regional / Supervisor Cabang"
                       value={jabatan}
                       onChange={(e) => setJabatan(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
@@ -286,7 +301,7 @@
               />
             )}
 
-            {/* SCREEN 3: FORM CHECKLIST (DENGAN AUTO-SAVE & CAMERA CAPTURE) */}
+            {/* SCREEN 3: FORM CHECKLIST (DENGAN QUICK FILTERS & AUTO-SAVE) */}
             {view === 'form' && (
               <FormAuditView 
                 kodeCabang={kodeCabang}
@@ -345,10 +360,10 @@
                 </div>
               </div>
 
-              {/* Card Tantangan */}
+              {/* Card Tantangan Self-Assessment */}
               <div className="w-full md:max-w-md bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl p-5 space-y-3">
                 <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
-                  🔥 Challenge Naik Level
+                  🔥 Target Self-Assessment
                 </span>
                 <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
                   {activeTier.challengeText}
@@ -409,22 +424,40 @@
     }
 
     // ==========================================
-    // KOMPONEN FORM CHECKLIST (AUTO-SAVE & KAMERA)
+    // KOMPONEN FORM CHECKLIST (DENGAN TAB FILTER)
     // ==========================================
     function FormAuditView({ kodeCabang, namaCabang, namaAuditor, jabatan, selectedSection, setSelectedSection, checklistItems, gasUrl, sessionId, onRefreshItems }) {
       const [answers, setAnswers] = useState({});
-      const [saveStatusMap, setSaveStatusMap] = useState({}); // Track 'saving' | 'saved' | 'error' per item ID
+      const [saveStatusMap, setSaveStatusMap] = useState({});
+      
+      // State Filter Cepat Baru
+      const [quickFilter, setQuickFilter] = useState('ALL'); // 'ALL', 'MANDATORY', 'UNFINISHED', 'ISSUES'
 
       const allSections = Object.keys(checklistItems);
-      const currentItems = selectedSection === 'ALL'
+      const rawItems = selectedSection === 'ALL'
         ? Object.values(checklistItems).flat()
         : (checklistItems[selectedSection] || []);
 
-      // FUNGSI AUTO-SAVE: Dikirim otomatis ke Google Sheets setiap kali opsi dipilih / foto diunggah
+      // Filter Item Berdasarkan Tab
+      const currentItems = rawItems.filter((item) => {
+        const itemId = item.idChecklist;
+        const currentAns = answers[itemId]?.hasilPenilaian || item.hasilPenilaian || '';
+
+        if (quickFilter === 'MANDATORY') {
+          return item.kelasBadge && item.kelasBadge !== '';
+        }
+        if (quickFilter === 'UNFINISHED') {
+          return !currentAns;
+        }
+        if (quickFilter === 'ISSUES') {
+          return currentAns === 'Exist Not Good' || currentAns === 'Not Exist';
+        }
+        return true;
+      });
+
+      // AUTO-SAVE FUNGSI
       const autoSaveSingleItem = async (itemData, updatedAnswer, updatedPhotoBase64) => {
         const itemId = itemData.idChecklist;
-
-        // Set status item ke 'saving'
         setSaveStatusMap(prev => ({ ...prev, [itemId]: 'saving' }));
 
         try {
@@ -458,25 +491,18 @@
         }
       };
 
-      // Handler Ubah Opsi Penilaian
       const handleAnswerChange = (itemData, value) => {
         const itemId = itemData.idChecklist;
         const currentPhoto = answers[itemId]?.photoBase64 || '';
 
         setAnswers(prev => ({
           ...prev,
-          [itemId]: {
-            ...itemData,
-            hasilPenilaian: value,
-            photoBase64: currentPhoto
-          }
+          [itemId]: { ...itemData, hasilPenilaian: value, photoBase64: currentPhoto }
         }));
 
-        // Triger Auto-Save Langsung
         autoSaveSingleItem(itemData, value, currentPhoto);
       };
 
-      // Handler Tangkap Foto (Kamera/Galeri)
       const handlePhotoChange = (itemData, file) => {
         if (!file) return;
         const itemId = itemData.idChecklist;
@@ -488,14 +514,9 @@
 
           setAnswers(prev => ({
             ...prev,
-            [itemId]: {
-              ...itemData,
-              hasilPenilaian: currentHasil,
-              photoBase64: base64Photo
-            }
+            [itemId]: { ...itemData, hasilPenilaian: currentHasil, photoBase64: base64Photo }
           }));
 
-          // Jika opsi sudah dipilih, triger Auto-Save ulang bersama fotonya
           if (currentHasil) {
             autoSaveSingleItem(itemData, currentHasil, base64Photo);
           }
@@ -506,7 +527,7 @@
       return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          {/* PANEL KIRI (Informasi Audit & Filter) */}
+          {/* PANEL KIRI (Informasi Audit & Filter Section) */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Informasi Audit</h3>
@@ -551,7 +572,7 @@
                 Auto-Save Aktif
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                Jawaban otomatis terisi & tersimpan ke Google Sheets saat diklik tanpa perlu tombol manual.
+                Jawaban & Foto langsung tersimpan ke Google Sheets secara otomatis.
               </p>
               <button
                 onClick={onRefreshItems}
@@ -562,17 +583,41 @@
             </div>
           </div>
 
-          {/* PANEL KANAN (Daftar Item Audit) */}
+          {/* PANEL KANAN (Daftar Item Audit + Quick Filter Tabs) */}
           <div className="lg:col-span-3 space-y-4">
+            
+            {/* TOOLBAR FILTER CEPAT (BARU) */}
+            <div className="flex flex-wrap gap-2 bg-slate-900 border border-slate-800 p-2 rounded-2xl overflow-x-auto">
+              {[
+                { id: 'ALL', label: '🌐 Semua Item' },
+                { id: 'MANDATORY', label: '🛡️ Hanya Mandatory Tier' },
+                { id: 'UNFINISHED', label: '⏳ Belum Diisi' },
+                { id: 'ISSUES', label: '⚠️ Temuan Problem (ENG/NE)' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setQuickFilter(tab.id)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                    quickFilter === tab.id
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-slate-950 text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* DAFTAR ITEM CHECKLIST */}
             {currentItems.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-                <p className="text-base font-bold text-white">Seluruh checklist pada section ini sudah dikerjakan!</p>
-                <p className="text-xs mt-1">Pilih section lain pada panel sebelah kiri atau periksa status di Dashboard.</p>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-2">
+                <p className="text-base font-bold text-white">Tidak ada item yang sesuai dengan filter ini!</p>
+                <p className="text-xs">Coba ganti filter cepat di atas atau pilih section lain pada panel sebelah kiri.</p>
               </div>
             ) : (
               currentItems.map((item, idx) => {
                 const itemId = item.idChecklist;
-                const currentAnswer = answers[itemId]?.hasilPenilaian || '';
+                const currentAnswer = answers[itemId]?.hasilPenilaian || item.hasilPenilaian || '';
                 const currentPhoto = answers[itemId]?.photoBase64 || '';
                 const saveState = saveStatusMap[itemId];
                 const badge = item.kelasBadge || 'P';
@@ -580,7 +625,7 @@
                 return (
                   <div key={itemId} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition relative">
                     
-                    {/* Header Item & Status Auto-Save */}
+                    {/* Header Item & Badges */}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-lg bg-indigo-950 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-800">
@@ -590,7 +635,7 @@
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {/* INDIKATOR STATUS SAVE */}
+                        {/* INDIKATOR AUTO-SAVE */}
                         {saveState === 'saving' && (
                           <span className="text-[11px] font-bold text-amber-400 animate-pulse bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-800/60">
                             🔄 Menyimpan...
@@ -607,7 +652,7 @@
                           </span>
                         )}
 
-                        {/* BADGE MANDATORY */}
+                        {/* BADGE MANDATORY TIER */}
                         {badge === 'S,G,P' && (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             🛡️ Silver, Gold, Platinum Mandatory
@@ -636,7 +681,7 @@
                       )}
                     </div>
 
-                    {/* 4 OPSI HASIL PENILAIAN */}
+                    {/* 4 OPSI PENILAIAN */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                       {[
                         { label: 'Exist Good', val: 'Exist Good', score: '+1 Point', color: 'peer-checked:bg-emerald-600 peer-checked:border-emerald-400' },
@@ -661,7 +706,7 @@
                       ))}
                     </div>
 
-                    {/* AMBIL FOTO BUKTI (KAMERA DIRECT CAPTURE & FILE SELECTOR) */}
+                    {/* KAMERA DIRECT CAPTURE & UPLOAD */}
                     <div className="pt-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
                         <div>
@@ -676,7 +721,7 @@
                             type="file"
                             id={`photo_${itemId}`}
                             accept="image/*"
-                            capture="environment" // MEMBUKA KAMERA BELAKANG OTOMATIS DI SMARTPHONE
+                            capture="environment"
                             onChange={(e) => handlePhotoChange(item, e.target.files[0])}
                             className="hidden"
                           />
@@ -689,7 +734,7 @@
                         </div>
                       </div>
 
-                      {/* Preview Foto Jika Ada */}
+                      {/* Preview Foto */}
                       {currentPhoto && (
                         <div className="mt-2 flex items-center gap-3 bg-slate-950/60 p-2 rounded-xl border border-slate-800">
                           <img src={currentPhoto} alt="Preview Foto Bukti" className="w-12 h-12 object-cover rounded-lg border border-slate-700" />
