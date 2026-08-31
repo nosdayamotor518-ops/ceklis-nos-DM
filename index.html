@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NOS Monitoring Audit Cabang - Daya Motor</title>
   
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel CDN untuk render JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -73,18 +75,18 @@
 
     function App() {
       const [gasUrl, setGasUrl] = useState(localStorage.getItem('NOS_GAS_URL') || DEFAULT_GAS_URL);
-      const [view, setView] = useState('setup'); // 'setup', 'dashboard', 'form'
+      const [view, setView] = useState('setup');
       const [cabangList, setCabangList] = useState([]);
       const [loading, setLoading] = useState(false);
 
-      // State Data Audit dengan LocalStorage Memory
-      const [kodeCabang, setKodeCabang] = useState(localStorage.getItem('NOS_KODE_CABANG') || '');
-      const [namaCabang, setNamaCabang] = useState(localStorage.getItem('NOS_NAMA_CABANG') || '');
-      const [namaAuditor, setNamaAuditor] = useState(localStorage.getItem('NOS_AUDITOR_NAME') || '');
-      const [jabatan, setJabatan] = useState(localStorage.getItem('NOS_AUDITOR_JABATAN') || '');
-      const [noTelp, setNoTelp] = useState(localStorage.getItem('NOS_AUDITOR_PHONE') || '+62');
+      // State dibuat KOSONG (Clear) di awal sesuai instruksi
+      const [kodeCabang, setKodeCabang] = useState('');
+      const [namaCabang, setNamaCabang] = useState('');
+      const [namaAuditor, setNamaAuditor] = useState('');
+      const [jabatan, setJabatan] = useState('');
+      const [noTelp, setNoTelp] = useState('');
       
-      // Riwayat Profil Auditor yang pernah tersimpan di web ini
+      // Riwayat Profil Auditor yang pernah tersimpan di browser ini
       const [profileHistory, setProfileHistory] = useState(() => {
         try {
           return JSON.parse(localStorage.getItem('NOS_AUDITOR_PROFILES')) || [];
@@ -105,15 +107,6 @@
           'H23 Premises': 0, 'H23 People': 0, 'H23 Process': 0
         }
       });
-
-      // Auto-save data pribadi setiap terjadi perubahan
-      useEffect(() => {
-        if (namaAuditor) localStorage.setItem('NOS_AUDITOR_NAME', namaAuditor);
-        if (jabatan) localStorage.setItem('NOS_AUDITOR_JABATAN', jabatan);
-        if (noTelp) localStorage.setItem('NOS_AUDITOR_PHONE', noTelp);
-        if (kodeCabang) localStorage.setItem('NOS_KODE_CABANG', kodeCabang);
-        if (namaCabang) localStorage.setItem('NOS_NAMA_CABANG', namaCabang);
-      }, [namaAuditor, jabatan, noTelp, kodeCabang, namaCabang]);
 
       useEffect(() => {
         if (gasUrl && gasUrl !== "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA") {
@@ -137,20 +130,18 @@
       // Handler Format Nomor Telepon (+62)
       const handlePhoneInput = (val) => {
         let cleaned = val.trim();
-        // Jika user mengetik angka 0 di depan (misal: 0812...), otomatis ubah ke +62812...
         if (cleaned.startsWith('0')) {
           cleaned = '+62' + cleaned.slice(1);
         } else if (cleaned.startsWith('62')) {
           cleaned = '+' + cleaned;
-        } else if (!cleaned.startsWith('+62')) {
-          // Hanya izinkan angka dan simbol +
+        } else if (cleaned !== '' && !cleaned.startsWith('+62')) {
           let digits = cleaned.replace(/[^0-9]/g, '');
           cleaned = '+62' + digits;
         }
         setNoTelp(cleaned);
       };
 
-      // Handler saat nama auditor dipilih / diketik (Cocokkan dengan History untuk Auto-Fill)
+      // Handler Autocomplete: Mengisi Jabatan & No HP otomatis setelah Nama Auditor diketik/dipilih
       const handleAuditorNameChange = (val) => {
         setNamaAuditor(val);
         const matched = profileHistory.find(p => p.nama.toLowerCase() === val.toLowerCase());
@@ -160,7 +151,16 @@
         }
       };
 
-      // Simpan Profil Auditor ke History LocalStorage
+      // Reset Isian Form Setup
+      const handleResetForm = () => {
+        setKodeCabang('');
+        setNamaCabang('');
+        setNamaAuditor('');
+        setJabatan('');
+        setNoTelp('');
+      };
+
+      // Simpan Profil Auditor ke History LocalStorage untuk Suggestion berikutnya
       const saveProfileToHistory = (nama, jab, telp) => {
         if (!nama) return;
         const existing = profileHistory.filter(p => p.nama.toLowerCase() !== nama.toLowerCase());
@@ -175,7 +175,6 @@
           return;
         }
 
-        // Simpan ke riwayat suggestion
         saveProfileToHistory(namaAuditor, jabatan, noTelp);
 
         setLoading(true);
@@ -186,7 +185,6 @@
           if (sessionData.sessionId) {
             setSessionId(sessionData.sessionId);
             setNamaCabang(sessionData.namaCabang);
-            localStorage.setItem('NOS_NAMA_CABANG', sessionData.namaCabang);
           }
 
           const dashRes = await fetch(`${gasUrl}?action=getDashboard&kodeCabang=${kodeCabang}`);
@@ -209,12 +207,11 @@
 
       return (
         <div className="min-h-screen pb-12">
-          {/* HEADER NAVIGATION DENGAN LOGO DAYA MOTOR EXTRA BESAR & EFEK 3D */}
+          {/* HEADER NAVIGATION */}
           <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               
               <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('setup')}>
-                {/* LOGO KIRI ATAS 3D EXTRA BESAR */}
                 <img 
                   src="Logo-DM-Putih.png" 
                   alt="Daya Motor" 
@@ -224,7 +221,6 @@
                     e.target.nextSibling.style.display='flex';
                   }}
                 />
-                {/* Fallback Badge jika foto gagal muat */}
                 <div className="w-12 h-12 bg-indigo-600 rounded-xl hidden items-center justify-center text-white font-extrabold text-2xl shadow-xl">
                   N
                 </div>
@@ -263,18 +259,17 @@
           {/* MAIN CONTAINER */}
           <main className="max-w-7xl mx-auto px-4 pt-6">
             
-            {/* SCREEN 1: SETUP CABANG & AUDITOR DENGAN AUTO-SAVE & SUGGESTION */}
+            {/* SCREEN 1: SETUP CABANG & AUDITOR */}
             {view === 'setup' && (
               <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
                 <div className="text-center space-y-3">
-                  {/* LOGO UTAMA SETUP SCREEN 3D */}
                   <img 
                     src="Logo-DM-Putih.png" 
                     alt="Daya Motor" 
                     className="h-28 md:h-36 w-auto mx-auto mb-2 object-contain filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.95)] drop-shadow-[0_0_28px_rgba(99,102,241,0.65)] transition-all duration-300 hover:scale-105 hover:-rotate-1" 
                   />
                   <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Audit & Self-Assessment</h2>
-                  <p className="text-sm text-slate-400">Identitas auditor & cabang tersimpan otomatis di perangkat ini</p>
+                  <p className="text-sm text-slate-400">Pilih cabang & ketik nama auditor untuk memuat profil otomatis</p>
                 </div>
 
                 <div className="space-y-4">
@@ -286,14 +281,11 @@
                       onChange={(e) => {
                         setKodeCabang(e.target.value);
                         const c = cabangList.find(x => x.kodeCabang === e.target.value);
-                        if (c) {
-                          setNamaCabang(c.namaCabang);
-                          localStorage.setItem('NOS_NAMA_CABANG', c.namaCabang);
-                        }
+                        if (c) setNamaCabang(c.namaCabang);
                       }}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="">-- Pilih Cabang (From Master_Cabang) --</option>
+                      <option value="">-- Pilih Cabang --</option>
                       {cabangList.map((c) => (
                         <option key={c.kodeCabang} value={c.kodeCabang}>
                           {c.kodeCabang} - {c.namaCabang} ({c.region})
@@ -302,21 +294,25 @@
                     </select>
                   </div>
 
-                  {/* 2. NAMA AUDITOR DENGAN AUTOCOMPLETE SUGGESTION */}
+                  {/* 2. NAMA AUDITOR WITH AUTO-SUGGESTION */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <label className="block text-xs font-bold uppercase text-slate-400">2. Nama Auditor</label>
-                      {namaAuditor && <span className="text-[10px] text-emerald-400 font-bold">✓ Tersimpan Otomatis</span>}
+                      {namaAuditor && (
+                        <button onClick={handleResetForm} className="text-[10px] text-rose-400 hover:underline">
+                          Clear / Reset Form
+                        </button>
+                      )}
                     </div>
                     <input
                       type="text"
                       list="auditor-suggestions"
-                      placeholder="Masukkan nama lengkap auditor..."
+                      placeholder="Ketik atau pilih nama auditor..."
                       value={namaAuditor}
                       onChange={(e) => handleAuditorNameChange(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
                     />
-                    {/* Datalist Suggestion untuk Auditor yang Pernah Mengisi */}
+                    {/* Datalist Suggestion */}
                     <datalist id="auditor-suggestions">
                       {profileHistory.map((p, idx) => (
                         <option key={idx} value={p.nama}>
@@ -326,42 +322,33 @@
                     </datalist>
                     {profileHistory.length > 0 && (
                       <p className="text-[10px] text-indigo-400 mt-1">
-                        💡 Ketik nama atau pilih dari daftar yang pernah mengisi aplikasi ini
+                        💡 Pilih dari daftar suggestion untuk mengisi Jabatan & No. Telp secara otomatis
                       </p>
                     )}
                   </div>
 
                   {/* 3. JABATAN AUDITOR */}
                   <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold uppercase text-slate-400">3. Jabatan Auditor</label>
-                      {jabatan && <span className="text-[10px] text-emerald-400 font-bold">✓ Tersimpan</span>}
-                    </div>
+                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">3. Jabatan Auditor</label>
                     <input
                       type="text"
-                      placeholder="E.g., Auditor Regional / Supervisor Cabang"
+                      placeholder="Terisi otomatis jika memilih dari suggestion / ketik manual"
                       value={jabatan}
                       onChange={(e) => setJabatan(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500"
                     />
                   </div>
 
-                  {/* 4. NOMOR TELEPON AUDITOR (+62 AUTO-FORMAT) */}
+                  {/* 4. NOMOR TELEPON AUDITOR */}
                   <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold uppercase text-slate-400">4. No. WhatsApp / Telepon</label>
-                      <span className="text-[10px] text-amber-400 font-bold">Format: +62</span>
-                    </div>
+                    <label className="block text-xs font-bold uppercase text-slate-400 mb-2">4. No. WhatsApp / Telepon</label>
                     <input
                       type="text"
-                      placeholder="+628123456789"
+                      placeholder="Contoh: 08123456789 (Otomatis diawali +62)"
                       value={noTelp}
                       onChange={(e) => handlePhoneInput(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
                     />
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      Ketik angka (misal: 0812...), otomatis terkonversi diawali +62
-                    </p>
                   </div>
                 </div>
 
@@ -621,7 +608,7 @@
                 <div>
                   <span className="text-xs text-slate-500">Auditor</span>
                   <p className="font-bold text-white">{namaAuditor} ({jabatan || '-'})</p>
-                  <p className="text-xs font-mono text-indigo-400">{noTelp}</p>
+                  <p className="text-xs font-mono text-indigo-400">{noTelp || '-'}</p>
                 </div>
                 <div>
                   <span className="text-xs text-slate-500">Session ID</span>
