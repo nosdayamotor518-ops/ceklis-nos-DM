@@ -29,7 +29,7 @@
     // ==========================================
     // ⚠️ GANTI DENGAN URL GOOGLE APPS SCRIPT ANDA ⚠️
     // ==========================================
-    const DEFAULT_GAS_URL = "GANTI_DENGAN_WEB_APP_URL_GAS_ANDA";
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxusK0G3dEYkmUziYS1TtfdAasHUI6gNBkCq_PQMUZjPfmxl3TAQ6wH6IG-3SgN0vQTiA/exec";
 
     // Data Konfigurasi Visual Tier Gamifikasi
     const TIER_CONFIG = {
@@ -173,12 +173,11 @@
                   alt="Daya Motor" 
                   className="h-9 w-auto object-contain"
                   onError={(e) => {
-                    // Fallback jika file foto logo belum diupload
                     e.target.style.display='none';
                     e.target.nextSibling.style.display='flex';
                   }}
                 />
-                {/* Fallback Badge 'N' jika logo belum di-upload */}
+                {/* Fallback Badge jika foto gagal muat */}
                 <div className="w-9 h-9 bg-indigo-600 rounded-xl hidden items-center justify-center text-white font-extrabold text-lg shadow-lg">
                   N
                 </div>
